@@ -1,1 +1,2 @@
 # EcoPlug
+Simple domotic system.
