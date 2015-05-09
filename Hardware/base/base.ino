@@ -42,7 +42,6 @@ void setup() {
   cptSerial.begin(1200);
 }
 
-byte ackCount = 0;
 void loop() {
   if (radio.receiveDone())
   {
@@ -125,7 +124,11 @@ void getTeleinfo() {
       trameComplete += check[i];
     }
 
-    if (trameComplete < 5) trameComplete = 0; // on a pas les 11 valeurs, il faut lire la trame suivante
+    for (i = 0; i < 5; i++) {
+      check[i] = 0; // on remet à 0 les check.
+    }
+
+    if (trameComplete < 5) trameComplete = 0; // on a pas les 5 valeurs, il faut lire la trame suivante
     else {
       trameComplete = 1;
       Serial.print("N:1");
