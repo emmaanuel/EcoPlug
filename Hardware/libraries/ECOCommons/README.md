@@ -1,1 +1,1 @@
-Copie this directory on you Arduino/libraries/ directory
+Copie this directory in your Arduino/libraries/ directory
