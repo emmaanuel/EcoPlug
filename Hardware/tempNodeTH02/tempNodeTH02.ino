@@ -3,12 +3,12 @@
 #include <LowPower.h> //get library from: https://github.com/lowpowerlab/lowpower
 #include <TH02.h>
 #include <I2C.h>
+#include <ECOCommons.h>
 
 #define NODEID        2    //unique for each node on same network
 #define NETWORKID     100  //the same on all nodes that talk to each other
 #define GATEWAYID     1
 #define FREQUENCY   RF69_868MHZ
-#define ENCRYPTKEY    "masecretkeyestla" //exactly the same 16 characters/bytes on all nodes!
 //#define IS_RFM69HW    //uncomment only for RFM69HW! Leave out if you have RFM69W!
 #define LED           9 // Moteinos have LEDs on D9
 #define FLASH_SS      8 // and FLASH SS on D8
