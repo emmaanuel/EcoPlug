@@ -15,11 +15,11 @@
 //#define SERIAL_EN                //comment out if you don't want any serial output
 
 #ifdef SERIAL_EN
-  #define DEBUG(input)   {Serial.print(input); delay(1);}
-  #define DEBUGln(input) {Serial.println(input); delay(1);}
+#define DEBUG(input)   {Serial.print(input); delay(1);}
+#define DEBUGln(input) {Serial.println(input); delay(1);}
 #else
-  #define DEBUG(input);
-  #define DEBUGln(input);
+#define DEBUG(input);
+#define DEBUGln(input);
 #endif
 
 
@@ -31,49 +31,47 @@ void setup() {
 #ifdef SERIAL_EN
   Serial.begin(SERIAL_BAUD);
 #endif
-  radio.initialize(FREQUENCY,NODEID,NETWORKID);
+  radio.initialize(FREQUENCY, NODEID, NETWORKID);
 #ifdef IS_RFM69HW
   radio.setHighPower(); //uncomment only for RFM69HW!
 #endif
   radio.encrypt(ENCRYPTKEY);
   radio.sleep();
-  sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY==RF69_433MHZ ? 433 : FREQUENCY==RF69_868MHZ ? 868 : 915);
+  sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY == RF69_433MHZ ? 433 : FREQUENCY == RF69_868MHZ ? 868 : 915);
   DEBUGln(buff);
-  
+
   uint8_t devID;
-  
-  
-  
-}  
-void loop() {  
- float temp = 0, rh = 0;
+
+}
+void loop() {
+  float temp = 0, rh = 0;
   //uint8_t status;
 
- 
- 
- //sprintf(buff, "TH|T:%s|H:%s", str_temp , str_rh);    
- byte sendSize = strlen(buff);
- DEBUG("Sending[");
- DEBUG(sendSize);
- DEBUG("]: ");
- DEBUG(buff);
- if (radio.sendWithRetry(GATEWAYID, buff, sendSize)) {
-   DEBUGln(" ok!");
- }else {
-   DEBUGln(" nothing...");
- }
- radio.sleep();
- Blink(LED,3);
- 
- // On attend 10 min
- for (byte i = 0; i < 70; i++)
-   LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF); 
+
+
+  //sprintf(buff, "TH|T:%s|H:%s", str_temp , str_rh);
+  byte sendSize = strlen(buff);
+  DEBUG("Sending[");
+  DEBUG(sendSize);
+  DEBUG("]: ");
+  DEBUG(buff);
+  if (radio.sendWithRetry(GATEWAYID, buff, sendSize)) {
+    DEBUGln(" ok!");
+  } else {
+    DEBUGln(" nothing...");
+  }
+  radio.sleep();
+  Blink(LED, 3);
+
+  // On attend 10 min
+  for (byte i = 0; i < 70; i++)
+    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
 }
 
 void Blink(byte PIN, int DELAY_MS)
 {
   pinMode(PIN, OUTPUT);
-  digitalWrite(PIN,HIGH);
+  digitalWrite(PIN, HIGH);
   delay(DELAY_MS);
-  digitalWrite(PIN,LOW);
+  digitalWrite(PIN, LOW);
 }
