@@ -1,0 +1,10 @@
+<Limit POST>
+Order deny,allow
+Deny from all
+Allow from XX.XX.XX.XX
+</Limit>
+
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [QSA,L]

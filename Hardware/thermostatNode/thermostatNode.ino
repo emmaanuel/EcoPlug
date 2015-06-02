@@ -3,16 +3,16 @@
 #include <LowPower.h> //get library from: https://github.com/lowpowerlab/lowpower
 #include <ECOCommons.h>
 
-#define NODEID        2    //unique for each node on same network
+#define NODEID        NODE_THERMOSTAT    //unique for each node on same network
 #define NETWORKID     100  //the same on all nodes that talk to each other
-#define GATEWAYID     1
 #define FREQUENCY   RF69_868MHZ
-#define IS_RFM69HW    //uncomment only for RFM69HW! Leave out if you have RFM69W!
+//#define IS_RFM69HW    //uncomment only for RFM69HW! Leave out if you have RFM69W!
 #define LED           9 // Moteinos have LEDs on D9
 #define FLASH_SS      8 // and FLASH SS on D8
-#define SERIAL_BAUD   115200
+#define SERIAL_BAUD   57600
+#define TX_433_PIN 3
 
-//#define SERIAL_EN                //comment out if you don't want any serial output
+#define SERIAL_EN                //comment out if you don't want any serial output
 
 #ifdef SERIAL_EN
 #define DEBUG(input)   {Serial.print(input); delay(1);}
@@ -23,11 +23,48 @@
 #endif
 
 
-char payload[] = "123 ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 RFM69 radio;
 char buff[50];
 
+/* -------------------------------------------------------- */
+/* ----                Blyss Spoofer API               ---- */
+/* -------------------------------------------------------- */
+
+/* Time constants */
+const unsigned long H_TIME = 2400; // Header delay
+const unsigned long T_TIME = 400;  // 1/3 frame delay
+const byte nb_frames = 13; // Numbers of frames per command
+
+/* RF signal usage macro */
+#define SIG_HIGH() digitalWrite(TX_433_PIN, HIGH)
+#define SIG_LOW() digitalWrite(TX_433_PIN, LOW)
+
+/** "Rolling code" (normally avoid frame spoofing) */
+byte RF_ROLLING_CODE[] = {
+  0x98, 0xDA, 0x1E, 0xE6, 0x67
+};
+
+/** Transmission channels and status enumeration */
+enum {
+  OFF, ON,
+  CH_1 = 8, CH_2 = 4, CH_3 = 2, CH_4 = 1, CH_5 = 3, CH_ALL = 0,
+  CH_A = 0, CH_B = 1, CH_C = 2, CH_D = 3
+};
+
+/** Key ID to spoof */
+byte RF_KEY[] = {
+  //0x79, 0x5F, 0x78 // Micro émetteur @SkyWodd
+  //0x39, 0x21, 0xA8 // Télécommande @SkyWodd
+  0x0E, 0xCB, 0xE8 // Détecteur IR @skywodd
+};
+
+/** Frame-data buffer (key ID + status flag + rolling code + token */
+byte RF_BUFFER[7];
+String action = "";
+/* ------------------------------------------------------ */
+
 void setup() {
+   delay(100);
 #ifdef SERIAL_EN
   Serial.begin(SERIAL_BAUD);
 #endif
@@ -39,33 +76,45 @@ void setup() {
   radio.sleep();
   sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY == RF69_433MHZ ? 433 : FREQUENCY == RF69_868MHZ ? 868 : 915);
   DEBUGln(buff);
-
   uint8_t devID;
+  
+// BLYSS Setup
+  set_key(RF_BUFFER, RF_KEY, true);
+  set_global_channel(RF_BUFFER, CH_D);
+  pinMode(TX_433_PIN, OUTPUT);
+  SIG_LOW();
+  
+    for (int i = 0; i < 3; i++) {
+    storeOpen();
+    storeClose();
+  }
 
 }
 void loop() {
-  float temp = 0, rh = 0;
-  //uint8_t status;
 
+  if (radio.receiveDone())
+  {
+    for (byte i = 0; i < radio.DATALEN; i++)
+      buff[i] = (char)radio.DATA[i];
+    buff[radio.DATALEN] = '\0';
 
-
-  //sprintf(buff, "TH|T:%s|H:%s", str_temp , str_rh);
-  byte sendSize = strlen(buff);
-  DEBUG("Sending[");
-  DEBUG(sendSize);
-  DEBUG("]: ");
-  DEBUG(buff);
-  if (radio.sendWithRetry(GATEWAYID, buff, sendSize)) {
-    DEBUGln(" ok!");
-  } else {
-    DEBUGln(" nothing...");
+    String msg = String(buff);
+    if (msg.indexOf(':') != -1){
+       action = msg.substring(msg.indexOf(':') + 1);
+      DEBUGln(action);
+      if (action=="STORE_OPEN")
+        storeOpen();
+      if (action=="STORE_CLOSE")
+        storeClose();  
+    }
+    if (radio.ACKRequested())
+    {
+      radio.sendACK();
+    }
+    Blink(LED, 3);
   }
-  radio.sleep();
-  Blink(LED, 3);
 
-  // On attend 10 min
-  for (byte i = 0; i < 70; i++)
-    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+  delay(0.1);
 }
 
 void Blink(byte PIN, int DELAY_MS)
@@ -74,4 +123,185 @@ void Blink(byte PIN, int DELAY_MS)
   digitalWrite(PIN, HIGH);
   delay(DELAY_MS);
   digitalWrite(PIN, LOW);
+}
+
+void storeOpen() {
+  Serial.println("STORE OPENING");
+  /* Send RF frame */
+  RF_BUFFER[4] = (RF_BUFFER[4] & 0x0F) | 0x10;
+  generate_rolling_code(RF_BUFFER);
+  generate_token(RF_BUFFER);
+  Blink(LED, 100);
+  send_command(RF_BUFFER);
+}
+
+void storeClose() {
+  Serial.println("STORE CLOSING");
+  /* Send RF frame */
+  RF_BUFFER[4] = (RF_BUFFER[4] & 0x0F) | 0x00;
+  generate_rolling_code(RF_BUFFER);
+  generate_token(RF_BUFFER);
+  Blink(LED, 1000);
+  send_command(RF_BUFFER);
+}
+
+/* BLYSS METHODS */
+/**
+ * Send header over RF
+ */
+inline void send_header(void) {
+  SIG_HIGH();
+  delayMicroseconds(H_TIME);
+}
+
+/**
+ * Send footer over RF
+ */
+inline void send_footer(void) {
+  SIG_LOW();
+  delay(H_TIME * 10 / 1000);
+}
+
+/**
+ * Send logical "1" over RF
+ */
+inline void send_one(void) {
+  SIG_LOW();
+  delayMicroseconds(T_TIME);
+  SIG_HIGH();
+  delayMicroseconds(T_TIME * 2);
+}
+
+/**
+ * Send logical "0" over RF
+ */
+inline void send_zero(void) {
+  SIG_LOW();
+  delayMicroseconds(T_TIME * 2);
+  SIG_HIGH();
+  delayMicroseconds(T_TIME);
+}
+
+/**
+ * Send a bits quarter (4 bits = MSB from 8 bits value) over RF
+ *
+ * @param data Source data to process and sent
+ */
+inline void send_quarter_MSB(byte data) {
+  (bitRead(data, 7)) ? send_one() : send_zero();
+  (bitRead(data, 6)) ? send_one() : send_zero();
+  (bitRead(data, 5)) ? send_one() : send_zero();
+  (bitRead(data, 4)) ? send_one() : send_zero();
+}
+
+/**
+ * Send a bits quarter (4 bits = LSB from 8 bits value) over RF
+ *
+ * @param data Source data to process and sent
+ */
+inline void send_quarter_LSB(byte data) {
+  (bitRead(data, 3)) ? send_one() : send_zero();
+  (bitRead(data, 2)) ? send_one() : send_zero();
+  (bitRead(data, 1)) ? send_one() : send_zero();
+  (bitRead(data, 0)) ? send_one() : send_zero();
+}
+
+/**
+ * Generate next valid token for RF transmission
+ *
+ * @param data Pointer to a RF frame-data buffer
+ */
+void generate_token(byte *data) {
+  static byte last_token = 0x7D;
+  data[5] = (data[5] & 0xF0) | ((last_token & 0xF0) >> 4);
+  data[6] = (last_token & 0x0F) << 4;
+  last_token += 10;
+}
+
+/**
+ * Generate next valid rolling code for RF transmission
+ *
+ * @param data Pointer to a RF frame-data buffer
+ */
+void generate_rolling_code(byte *data) {
+  static byte i = 0;
+  data[4] = (data[4] & 0xF0) | ((RF_ROLLING_CODE[i] & 0xF0) >> 4);
+  data[5] = (data[5] & 0x0F) | (RF_ROLLING_CODE[i] & 0x0F) << 4;
+  if (++i >= sizeof(RF_ROLLING_CODE)) i = 0;
+}
+
+/**
+ * Change the status (ON / OFF) of the transmitter
+ *
+ * @param data Pointer to a RF frame-data buffer
+ * @param status Status to use (ON or OFF)
+ */
+inline void set_status(byte *data, byte status) {
+  if (!status) data[4] = (data[4] & 0x0F) | 0x10;
+  else data[4] &= 0x0F;
+}
+
+/**
+ * Send a complete frame-data buffer over RF
+ *
+ * @param data Pointer to a RF frame-data buffer
+ */
+void send_buffer(byte *data) {
+  send_header();
+  for (byte i = 0; i < 6; ++i) {
+    send_quarter_MSB(data[i]);
+    send_quarter_LSB(data[i]);
+  }
+  send_quarter_MSB(data[6]);
+  send_footer();
+}
+
+/**
+ * Send a complete frame-data buffer n times to be hooked by the target receiver
+ *
+ * @param data Pointer to a RF frame-data buffer
+ */
+inline void send_command(byte *data) {
+  for (byte i = 0; i < nb_frames; ++i)
+    send_buffer(data);
+}
+
+/**
+ * Copy a RF key ID into a frame-data buffer
+ *
+ * @param data Pointer to a RF frame-data buffer
+ * @param key Pointer to a RF key-data buffer
+ * @param overwrite Set to true if you want to overwrite channel data and use data from key buffer
+ */
+inline void set_key(byte *data, byte *key, byte overwrite) {
+  data[0] = 0xFE;
+  if (overwrite)
+    data[1] = key[0];
+  else
+    data[1] = (data[1] & 0xF0) | (key[0] & 0x0F);
+  data[2] = key[1];
+  if (overwrite)
+    data[3] = key[2];
+  else
+    data[3] = (data[3] & 0x0F) | (key[2] & 0xF0);
+}
+
+/**
+ * Set the target sub-channel of the transmitter
+ *
+ * @param data Pointer to a RF frame-data buffer
+ * @param channel Target channel
+ */
+inline void set_channel(byte *data, byte channel) {
+  data[3] = (data[3] & 0xF0) | (channel & 0x0F);
+}
+
+/**
+ * Set the target global channel of the transmitter
+ *
+ * @param data Pointer to a RF frame-data buffer
+ * @param channel Target channel
+ */
+inline void set_global_channel(byte *data, byte channel) {
+  data[1] = (data[1] & 0x0F) | ((channel << 4) & 0xF0);
 }

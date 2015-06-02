@@ -5,7 +5,7 @@
 #include <DallasTemperature.h>
 #include <ECOCommons.h>
 
-#define NODEID        4    //unique for each node on same network
+#define NODEID        NODE_JARDIN    //unique for each node on same network
 #define NETWORKID     100  //the same on all nodes that talk to each other
 #define GATEWAYID     1
 #define FREQUENCY   RF69_868MHZ

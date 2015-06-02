@@ -2,15 +2,21 @@
 #include <SPI.h>
 #include <SoftwareSerial.h>
 #include <ECOCommons.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
-#define NODEID        1    //unique for each node on same network
+#define NODEID        NODE_BASE    //unique for each node on same network
 #define NETWORKID     100  //the same on all nodes that talk to each other
 #define FREQUENCY     RF69_868MHZ
 #define IS_RFM69HW    //uncomment only for RFM69HW! Leave out if you have RFM69W!
-#define SERIAL_BAUD   115200
+#define SERIAL_BAUD   57600
 #define LED           9 // Leds PIN
+#define ONE_WIRE_BUS 3
+
 
 RFM69 radio;
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
 bool promiscuousMode = false; //set to 'true' to sniff all packets on the same network
 SoftwareSerial cptSerial(4, 3);
 /***************** Teleinfo configuration part *******************/
@@ -28,21 +34,32 @@ int finTrame = 0;
 unsigned long hc_value = 0, hp_value = 0;
 unsigned int power_value = 0;
 char tarif_value[3] = "";
+unsigned long lastMillis = millis();
+unsigned long lastMinute = 8;
+String currentAction = "";
+char buff[50];
 
 
+int tour = 0;
 void setup() {
+  Blink(LED, 500);
   Serial.begin(SERIAL_BAUD);
+  Serial.setTimeout(2000);
   delay(10);
+  Serial.println("GO");
   radio.initialize(FREQUENCY, NODEID, NETWORKID);
 #ifdef IS_RFM69HW
   radio.setHighPower(); //only for RFM69HW!
 #endif
   radio.encrypt(ENCRYPTKEY);
-  radio.promiscuous(promiscuousMode);
   cptSerial.begin(1200);
+  sensors.begin();
+
+  Blink(LED, 500);
 }
 
 void loop() {
+  tour++;
   if (radio.receiveDone())
   {
     Serial.print("N:");
@@ -54,13 +71,69 @@ void loop() {
 
     if (radio.ACKRequested())
     {
-      byte theNodeID = radio.SENDERID;
       radio.sendACK();
     }
     Blink(LED, 3);
   }
 
-  getTeleinfo();
+  if (tour > 10000) {
+    while (cptSerial.available())
+    CaractereRecu = cptSerial.read();
+    getTeleinfo();
+    tour = 0;
+  }
+  delay(0.1);
+
+  checkLocalTemp();
+
+  while (Serial.available() > 0) {
+    currentAction = Serial.readStringUntil('#');
+    currentAction.trim();
+    Serial.println(currentAction);
+    if ((currentAction.indexOf('|') != -1) && (currentAction.indexOf(':') != -1)) {
+      String node = currentAction.substring(0, currentAction.indexOf('|'));
+      String id = node.substring(node.indexOf(':') + 1);
+      String action = currentAction.substring(currentAction.indexOf('|') + 1);
+      processAction(id.toInt(), action);
+    }
+  }
+}
+
+void checkLocalTemp() {  // Verifie si c'est le moment de mesurer la temperature localement
+  unsigned long delta = millis() - lastMillis;
+  if (delta > 60000) { // Toutes les minutes
+    lastMinute = lastMinute + 1 ;
+    lastMillis = millis();
+    if (lastMinute >= 10) {
+      sendLocalTemp();
+      lastMinute = 0;
+    }
+  }
+}
+
+void sendLocalTemp() {  // Mesure et envoie la temperature locale
+  sensors.requestTemperatures();
+  float temp = sensors.getTempCByIndex(0) / 1;
+  Serial.print("N:1");
+  Serial.print("|T|");
+  Serial.print("T:");
+  Serial.println(temp);
+}
+
+int processAction(int id, String action) {
+  char actionbuff[50];
+  action.toCharArray(actionbuff, 50);
+  sprintf(buff, "ACT:%s", actionbuff);
+  byte sendSize = strlen(buff);
+  Serial.print("Sending[");
+  Serial.print(sendSize);
+  Serial.print("]: ");
+  Serial.print(buff);
+  if (radio.sendWithRetry(id, buff, sendSize, 0, 100)) {
+    Serial.println(" ok!");
+  } else {
+    Serial.println(" nothing...");
+  }
 }
 
 void Blink(byte PIN, int DELAY_MS)
@@ -141,7 +214,7 @@ void getTeleinfo() {
       Serial.print(power_value);
       Serial.print("|tf:");
       Serial.println(tarif_value);
-    }
+      }
   }
 }
 
@@ -248,4 +321,6 @@ int affecteEtiquette(char *etiquette, char *valeur) {
     return 0;
   return 1;
 }
+
+
 
