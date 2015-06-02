@@ -23,6 +23,7 @@
         });
 
         rooms_names = [
+        {n:1, name:"Garage"},
         {n:2, name:"Etage"},
         {n:3, name:"Salon"},
         {n:4, name:"Jardin"}];
@@ -30,7 +31,8 @@
         $scope.rooms = [
         {node: "2", name:"Etage", color: "primary", icon: "fa-bed", temp:"22,5", rh:"45", date:"", light:null},
         {node: "3", name:"Salon", color: "green", icon: "fa-coffee", temp:"20", rh:"46", date:"", light:null},
-        {node: "4", name:"Jardin", color: "yellow", icon: "fa-tree", temp:"", rh:"", date:"", light:"0"}];
+        {node: "4", name:"Jardin", color: "yellow", icon: "fa-tree", temp:"", rh:"", date:"", light:"0"},
+        {node: "1", name:"Garage", color: "red", icon: "fa-car", temp:"22,5", rh:null, date:"", light:null}];
         $scope.lastEDFupdate = ".";
         $scope.HP="";
         $scope.HC="";

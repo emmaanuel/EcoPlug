@@ -25,12 +25,12 @@ $app->get('/params', 'getAllParams');
 $app->put('/params/:name', 'setParams');
 
 $app->get('/action/next','getNextAction');
+$app->get('/action/last','getLastAction');
 $app->post('/action/process','processAction');
-
+$app->post('/action','insertAction');
+$app->post('/action/log','logAction');
 
 $app->run();
-
-
 
 function getTempbyDateNode($date, $node) {
 	try {
@@ -322,6 +322,21 @@ function getNextAction() {
 	}
 }
 
+function getLastAction() {
+	try {
+		$db = getDB();
+		$sql = "Select date, action from domo_actions where processed=1 ORDER BY date DESC LIMIT 5";
+		$stmt = $db->prepare($sql);
+		$stmt->execute();
+		$action = $stmt->fetchAll(PDO::FETCH_OBJ);
+		$db = null;
+		echo '{"action": ' . json_encode($action) . '}';
+	} catch(PDOException $e) {
+	    //error_log($e->getMessage(), 3, '/var/tmp/php.log');
+		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
+	}
+}
+
 function processAction() {
 	try {
 		$request = \Slim\Slim::getInstance()->request();
@@ -338,5 +353,38 @@ function processAction() {
 	}
 }
 
+function insertAction() {
+	$request = \Slim\Slim::getInstance()->request();
+	$action = json_decode($request->getBody());
+	$sql = "INSERT INTO domo_actions VALUES(null, NOW(),:action,0)";
+	try {
+		$db = getDB();
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam("action", $action->a);
+		$stmt->execute();
+		$db = null;
+	} catch(PDOException $e) {
+		//error_log($e->getMessage(), 3, '/var/tmp/php.log');
+		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
+
+	}
+}
+
+function logAction() {
+	$request = \Slim\Slim::getInstance()->request();
+	$action = json_decode($request->getBody());
+	$sql = "INSERT INTO domo_actions VALUES(null, NOW(),:action,1)";
+	try {
+		$db = getDB();
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam("action", $action->a);
+		$stmt->execute();
+		$db = null;
+	} catch(PDOException $e) {
+		//error_log($e->getMessage(), 3, '/var/tmp/php.log');
+		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
+
+	}
+}
 
 ?>

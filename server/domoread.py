@@ -62,7 +62,12 @@ while (1==1):
                                                 temp = getValue(msg.split('|')[2])
                                                 light = getValue(msg.split('|')[3])
                                                 rx = getValue(msg.split('|')[4])
-                                                print int(light)
+                                                c = pycurl.Curl()
+                                                c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/temp')
+                                                c.setopt(pycurl.POST, 1)
+                                                c.setopt(pycurl.POSTFIELDS, '{"n":"'+node+'","t":"'+temp+'","l":"'+light+'","r":"'+rx+'"}')
+                                                c.perform()
+                                                c.close()
                                                 if (int(light) >50):
                                                         if (lastDayStatus == "DAY"):
                                                                 newDayStatus = "DAY"
@@ -78,12 +83,13 @@ while (1==1):
                                                                 lastDayStatus = "NIGHT"
                                                                 print "lastDayStatus change : " + lastDayStatus
                                                 if (newDayStatus != currentDayStatus):
-                                                        print "DAT_STATUS change : " + newDayStatus
+                                                        print "DAY_STATUS change : " + newDayStatus
                                                         currentDayStatus = newDayStatus
                                                         if (newDayStatus == "DAY"):
-                                                                textToSend ="N:15STORE_OPEN".encode() + "#"
+                                                                action = "STORE_OPEN"
                                                         else:
-                                                                textToSend ="N:5|STORE_CLOSE".encode() + "#"
+                                                                action = "STORE_CLOSE"
+                                                        textToSend ="N:5|".encode() + action.encode() + "#"
                                                         sent = False
                                                         while (not sent):
                                                                 print "Sending" + textToSend
@@ -92,12 +98,12 @@ while (1==1):
                                                                 print "received: " + received
                                                                 if (received == textToSend):
                                                                         sent = True
-                                                c = pycurl.Curl()
-                                                c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/temp')
-                                                c.setopt(pycurl.POST, 1)
-                                                c.setopt(pycurl.POSTFIELDS, '{"n":"'+node+'","t":"'+temp+'","r":"'+rx+'","l":"'+light+'"}')
-                                                c.perform()
-                                                c.close()
+                                                        c = pycurl.Curl()
+                                                        c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/action/log')
+                                                        c.setopt(pycurl.POST, 1)
+                                                        c.setopt(pycurl.POSTFIELDS, '{"a":"'+action+'"}')
+                                                        c.perform()
+                                                        c.close()
                                         elif (msgtype == "MO"):
                                                 node = getValue(msg.split('|')[0])
                                                 rx = getValue(msg.split('|')[2])
@@ -119,7 +125,7 @@ while (1==1):
                                         else :
                                                 print("unknown: " + msg + "\r\n")
                                         msg = ''
-                if ((time.time() - referenceTime)>5):
+                if ((time.time() - referenceTime)>10):
                         referenceTime = time.time()
                         c = pycurl.Curl()
                         c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/action/next')

@@ -125,15 +125,7 @@ int processAction(int id, String action) {
   action.toCharArray(actionbuff, 50);
   sprintf(buff, "ACT:%s", actionbuff);
   byte sendSize = strlen(buff);
-  Serial.print("Sending[");
-  Serial.print(sendSize);
-  Serial.print("]: ");
-  Serial.print(buff);
-  if (radio.sendWithRetry(id, buff, sendSize, 0, 100)) {
-    Serial.println(" ok!");
-  } else {
-    Serial.println(" nothing...");
-  }
+  radio.sendWithRetry(id, buff, sendSize, 0, 100);
 }
 
 void Blink(byte PIN, int DELAY_MS)
