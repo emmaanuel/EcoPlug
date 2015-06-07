@@ -35,7 +35,7 @@ unsigned long hc_value = 0, hp_value = 0;
 unsigned int power_value = 0;
 char tarif_value[3] = "";
 unsigned long lastMillis = millis();
-unsigned long lastMinute = 8;
+unsigned long lastMinute = 4;
 String currentAction = "";
 char buff[50];
 
@@ -104,7 +104,7 @@ void checkLocalTemp() {  // Verifie si c'est le moment de mesurer la temperature
   if (delta > 60000) { // Toutes les minutes
     lastMinute = lastMinute + 1 ;
     lastMillis = millis();
-    if (lastMinute >= 10) {
+    if (lastMinute >= 5) {
       sendLocalTemp();
       lastMinute = 0;
     }

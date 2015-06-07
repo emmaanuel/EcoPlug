@@ -2,6 +2,7 @@
 #include <SPI.h>
 #include <LowPower.h> //get library from: https://github.com/lowpowerlab/lowpower
 #include <ECOCommons.h>
+#include "U8glib.h"
 
 #define NODEID        NODE_THERMOSTAT    //unique for each node on same network
 #define NETWORKID     100  //the same on all nodes that talk to each other
@@ -11,12 +12,13 @@
 #define FLASH_SS      8 // and FLASH SS on D8
 #define SERIAL_BAUD   57600
 #define TX_433_PIN 3
+#define RELAY 4
 
 #define SERIAL_EN                //comment out if you don't want any serial output
 
 #ifdef SERIAL_EN
-#define DEBUG(input)   {Serial.print(input); delay(1);}
-#define DEBUGln(input) {Serial.println(input); delay(1);}
+#define DEBUG(input)   {Serial.print(input);}
+#define DEBUGln(input) {Serial.println(input);}
 #else
 #define DEBUG(input);
 #define DEBUGln(input);
@@ -24,7 +26,15 @@
 
 
 RFM69 radio;
+bool promiscuousMode = true; //sniff all packets on the same network
 char buff[50];
+char ligne1[20] = "Cible: ?";
+char ligne2[20] = "Zone: ?";
+char ligne3[20] = "Temp: 22.50";
+char ligne4[20] = "Status: ON";
+float cible = 19;
+int zone = 3;
+char rooms[][15] = {"?", "Garage", "Juliette", "Salon", "Jardin", "Thermostat"};
 
 /* -------------------------------------------------------- */
 /* ----                Blyss Spoofer API               ---- */
@@ -39,10 +49,13 @@ const byte nb_frames = 13; // Numbers of frames per command
 #define SIG_HIGH() digitalWrite(TX_433_PIN, HIGH)
 #define SIG_LOW() digitalWrite(TX_433_PIN, LOW)
 
+U8GLIB_SSD1306_128X64 u8g(U8G_I2C_OPT_NO_ACK);	// Display which does not send ACK
+
 /** "Rolling code" (normally avoid frame spoofing) */
 byte RF_ROLLING_CODE[] = {
   0x98, 0xDA, 0x1E, 0xE6, 0x67
 };
+
 
 /** Transmission channels and status enumeration */
 enum {
@@ -61,10 +74,14 @@ byte RF_KEY[] = {
 /** Frame-data buffer (key ID + status flag + rolling code + token */
 byte RF_BUFFER[7];
 String action = "";
+String action_arg = "";
 /* ------------------------------------------------------ */
 
 void setup() {
-   delay(100);
+  delay(100);
+  pinMode(LED, OUTPUT);
+  pinMode(RELAY, OUTPUT);
+  digitalWrite(RELAY, LOW);
 #ifdef SERIAL_EN
   Serial.begin(SERIAL_BAUD);
 #endif
@@ -73,60 +90,116 @@ void setup() {
   radio.setHighPower(); //uncomment only for RFM69HW!
 #endif
   radio.encrypt(ENCRYPTKEY);
+  radio.promiscuous(promiscuousMode);
   radio.sleep();
   sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY == RF69_433MHZ ? 433 : FREQUENCY == RF69_868MHZ ? 868 : 915);
   DEBUGln(buff);
   uint8_t devID;
-  
-// BLYSS Setup
+
+  //OLED SETUP
+  // assign default color value
+  if ( u8g.getMode() == U8G_MODE_R3G3B2 ) {
+    u8g.setColorIndex(255);     // white
+  }
+  else if ( u8g.getMode() == U8G_MODE_GRAY2BIT ) {
+    u8g.setColorIndex(3);         // max intensity
+  }
+  else if ( u8g.getMode() == U8G_MODE_BW ) {
+    u8g.setColorIndex(1);         // pixel on
+  }
+  else if ( u8g.getMode() == U8G_MODE_HICOLOR ) {
+    u8g.setHiColorByRGB(255, 255, 255);
+  }
+
+  // BLYSS Setup
   set_key(RF_BUFFER, RF_KEY, true);
   set_global_channel(RF_BUFFER, CH_D);
   pinMode(TX_433_PIN, OUTPUT);
   SIG_LOW();
-  
-    for (int i = 0; i < 3; i++) {
-    storeOpen();
-    storeClose();
-  }
 
+  /*    for (int i = 0; i < 2; i++) {
+      storeOpen();
+      storeClose();
+    }
+  */
+  updateScreen();
 }
 void loop() {
+  u8g.firstPage();
+  do {
+    draw();
+  } while ( u8g.nextPage() );
 
   if (radio.receiveDone())
   {
     for (byte i = 0; i < radio.DATALEN; i++)
       buff[i] = (char)radio.DATA[i];
     buff[radio.DATALEN] = '\0';
-
-    String msg = String(buff);
-    if (msg.indexOf(':') != -1){
-       action = msg.substring(msg.indexOf(':') + 1);
-      DEBUGln(action);
-      if (action=="STORE_OPEN")
-        storeOpen();
-      if (action=="STORE_CLOSE")
-        storeClose();  
-    }
-    if (radio.ACKRequested())
+    if ((radio.TARGETID==NODEID) && radio.ACKRequested())
     {
       radio.sendACK();
     }
+    DEBUGln(buff);
+    DEBUG("From: ");
+    DEBUG(radio.SENDERID);
+    DEBUG(" -> ");
+    DEBUG(radio.TARGETID);
+    DEBUG(" : ");
+    DEBUGln(rooms[radio.SENDERID]);
+
+    String msg = String(buff);
+    if (msg.indexOf(':') != -1) {
+      action = msg.substring(msg.indexOf(':') + 1);
+      if (action.indexOf('|') != -1) {
+        action_arg = action.substring(action.indexOf('|') + 1);
+        action = action.substring(0, action.indexOf('|'));
+      }
+      DEBUGln(action);
+      if (action == "STORE_OPEN")
+        storeOpen();
+      if (action == "STORE_CLOSE")
+        storeClose();
+      if (action == "HEATER_ON")
+        heaterOn();
+      if (action == "HEATER_OFF")
+        heaterOff();
+      if (action == "SET_CIBLE")
+        setCible(action_arg);
+      if (action == "SET_ZONE")
+        setZone(action_arg);
+    }
+
     Blink(LED, 3);
   }
+  delay(1);
+}
 
-  delay(0.1);
+void draw(void) {
+  // graphic commands to redraw the complete screen should be placed here
+  u8g.setFont(u8g_font_unifont);
+  u8g.drawStr( 0, 15, ligne1);
+  u8g.drawStr( 0, 30, ligne2);
+  u8g.drawStr( 0, 45, ligne3);
+  u8g.drawStr( 0, 60, ligne4);
+}
+
+void updateScreen() {
+  char buffcible[6];
+  dtostrf(cible, 5, 2, buffcible);
+  sprintf(ligne1, "Cible: %s", buffcible);
+  sprintf(ligne2, "Zone: %s", rooms[zone]);
+
 }
 
 void Blink(byte PIN, int DELAY_MS)
 {
-  pinMode(PIN, OUTPUT);
   digitalWrite(PIN, HIGH);
   delay(DELAY_MS);
   digitalWrite(PIN, LOW);
 }
 
 void storeOpen() {
-  Serial.println("STORE OPENING");
+  DEBUGln("STORE OPENING");
   /* Send RF frame */
   RF_BUFFER[4] = (RF_BUFFER[4] & 0x0F) | 0x10;
   generate_rolling_code(RF_BUFFER);
@@ -136,14 +209,39 @@ void storeOpen() {
 }
 
 void storeClose() {
-  Serial.println("STORE CLOSING");
+  DEBUGln("STORE CLOSING");
   /* Send RF frame */
   RF_BUFFER[4] = (RF_BUFFER[4] & 0x0F) | 0x00;
   generate_rolling_code(RF_BUFFER);
   generate_token(RF_BUFFER);
-  Blink(LED, 1000);
+  Blink(LED, 100);
   send_command(RF_BUFFER);
 }
+
+void heaterOn() {
+  DEBUGln("HEATER ON");
+  digitalWrite(RELAY, HIGH);
+}
+
+void heaterOff() {
+  DEBUGln("HEATER OFF");
+  digitalWrite(RELAY, LOW);
+}
+
+void setCible(String str_cible) {
+  cible = str_cible.toFloat();
+  DEBUG("CIBLE: ");
+  DEBUGln(cible);
+  updateScreen();
+}
+
+void setZone(String str_cible) {
+  zone = str_cible.toInt();
+  DEBUG("Zone: ");
+  DEBUGln(zone);
+  updateScreen();
+}
+
 
 /* BLYSS METHODS */
 /**

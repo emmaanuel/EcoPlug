@@ -153,10 +153,10 @@ while (1==1):
                                 c.close()
 
         except IOError, e:
-                                print "Erreur : %s \r\n", e
+                                print "Erreur : ", e
                                 reopen = True
         except Exception, e:
-                                print "Erreur : %s \r\n", e
-                                print "msg: " + msg+ "\r\n"
+                                print "Erreur : ", e
+                                print "msg: ", msg
                                 msg=''
                                 sys.stdout.flush()
