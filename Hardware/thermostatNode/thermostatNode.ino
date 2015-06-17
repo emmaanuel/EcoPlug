@@ -26,7 +26,7 @@
 
 
 RFM69 radio;
-bool promiscuousMode = true; //sniff all packets on the same network
+bool promiscuousMode = false; //sniff all packets on the same network
 char buff[50];
 char ligne1[20] = "Cible: ?";
 char ligne2[20] = "Zone: ?";
@@ -65,11 +65,7 @@ enum {
 };
 
 /** Key ID to spoof */
-byte RF_KEY[] = {
-  //0x79, 0x5F, 0x78 // Micro émetteur @SkyWodd
-  //0x39, 0x21, 0xA8 // Télécommande @SkyWodd
-  0x0E, 0xCB, 0xE8 // Détecteur IR @skywodd
-};
+byte RF_KEY[] = RF433KEY;
 
 /** Frame-data buffer (key ID + status flag + rolling code + token */
 byte RF_BUFFER[7];
@@ -86,11 +82,11 @@ void setup() {
   Serial.begin(SERIAL_BAUD);
 #endif
   radio.initialize(FREQUENCY, NODEID, NETWORKID);
-#ifdef IS_RFM69HW
-  radio.setHighPower(); //uncomment only for RFM69HW!
-#endif
   radio.encrypt(ENCRYPTKEY);
   radio.promiscuous(promiscuousMode);
+  #ifdef IS_RFM69HW
+  radio.setHighPower(); //uncomment only for RFM69HW!
+#endif
   radio.sleep();
   sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY == RF69_433MHZ ? 433 : FREQUENCY == RF69_868MHZ ? 868 : 915);
   DEBUGln(buff);
@@ -117,11 +113,11 @@ void setup() {
   pinMode(TX_433_PIN, OUTPUT);
   SIG_LOW();
 
-  /*    for (int i = 0; i < 2; i++) {
+      for (int i = 0; i < 3; i++) {
       storeOpen();
       storeClose();
     }
-  */
+  
   updateScreen();
 }
 void loop() {
