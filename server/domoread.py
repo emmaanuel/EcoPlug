@@ -68,20 +68,20 @@ while (1==1):
                                                 c.setopt(pycurl.POSTFIELDS, '{"n":"'+node+'","t":"'+temp+'","l":"'+light+'","r":"'+rx+'"}')
                                                 c.perform()
                                                 c.close()
-                                                if (int(light) >50):
+                                                if (int(light) >120):
                                                         if (lastDayStatus == "DAY"):
                                                                 newDayStatus = "DAY"
-                                                                print "newDayStatus change : " + newDayStatus
+                                                                print time.strftime("%Y-%m-%d %H:%M : ") + "newDayStatus change : " + newDayStatus
                                                         else:
                                                                 lastDayStatus = "DAY"
-                                                                print "lastDayStatus change : " + lastDayStatus
-                                                else:
+                                                                print time.strftime("%Y-%m-%d %H:%M : ") +"lastDayStatus change : " + lastDayStatus
+                                                elif (int(light) <50):
                                                         if (lastDayStatus == "NIGHT"):
                                                                 newDayStatus = "NIGHT"
-                                                                print "newDayStatus change : " + newDayStatus
+                                                                print time.strftime("%Y-%m-%d %H:%M : ") +"newDayStatus change : " + newDayStatus
                                                         else:
                                                                 lastDayStatus = "NIGHT"
-                                                                print "lastDayStatus change : " + lastDayStatus
+                                                                print time.strftime("%Y-%m-%d %H:%M : ") +"lastDayStatus change : " + lastDayStatus
                                                 if (newDayStatus != currentDayStatus):
                                                         print "DAY_STATUS change : " + newDayStatus
                                                         currentDayStatus = newDayStatus
@@ -92,10 +92,10 @@ while (1==1):
                                                         textToSend ="N:5|".encode() + action.encode() + "#"
                                                         sent = False
                                                         while (not sent):
-                                                                print "Sending" + textToSend
+                                                                print time.strftime("%Y-%m-%d %H:%M : ") +"Sending" + textToSend
                                                                 ser.write(textToSend)
                                                                 received = ser.readline()[:-2] +"#"
-                                                                print "received: " + received
+                                                                print time.strftime("%Y-%m-%d %H:%M : ") +"received: " + received
                                                                 if (received == textToSend):
                                                                         sent = True
                                                         c = pycurl.Curl()
@@ -104,6 +104,7 @@ while (1==1):
                                                         c.setopt(pycurl.POSTFIELDS, '{"a":"'+action+'"}')
                                                         c.perform()
                                                         c.close()
+                                                        sys.stdout.flush()
                                         elif (msgtype == "MO"):
                                                 node = getValue(msg.split('|')[0])
                                                 rx = getValue(msg.split('|')[2])
@@ -123,7 +124,8 @@ while (1==1):
                                                 c.perform()
                                                 c.close()    
                                         else :
-                                                print("unknown: " + msg + "\r\n")
+                                                print time.strftime("%Y-%m-%d %H:%M : ") + "unknown: " + msg + "\r\n"
+                                                sys.stdout.flush()
                                         msg = ''
                 if ((time.time() - referenceTime)>10):
                         referenceTime = time.time()
@@ -139,10 +141,10 @@ while (1==1):
                                 textToSend = "N:5|".encode() + data["action"][0]["action"].encode() + "#"
                                 sent = False
                                 while (not sent):
-                                        print "Sending" + textToSend
+                                        print time.strftime("%Y-%m-%d %H:%M : ") + "Sending" + textToSend
                                         ser.write(textToSend)
                                         received = ser.readline()[:-2] +"#"
-                                        print "received: " + received
+                                        print time.strftime("%Y-%m-%d %H:%M : ") + "received: " + received
                                         if (received == textToSend):
                                                 sent = True
                                 c = pycurl.Curl()
@@ -151,12 +153,14 @@ while (1==1):
                                 c.setopt(pycurl.POSTFIELDS, '{"id":"' + str(identifiant) + '"}')
                                 c.perform()
                                 c.close()
+                                sys.stdout.flush()
 
         except IOError, e:
-                                print "Erreur : ", e
+                                print time.strftime("%Y-%m-%d %H:%M : ") + "Erreur : ", e
+                                sys.stdout.flush()
                                 reopen = True
         except Exception, e:
-                                print "Erreur : ", e
-                                print "msg: ", msg
+                                print time.strftime("%Y-%m-%d %H:%M : ") + "Erreur : ", e
+                                print time.strftime("%Y-%m-%d %H:%M : ") + "errormsg: ", msg
                                 msg=''
                                 sys.stdout.flush()
