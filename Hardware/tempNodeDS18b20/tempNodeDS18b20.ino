@@ -29,8 +29,10 @@ RFM69 radio;
 char buff[50];
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
-int photocellPin = 3;     // the cell and 10K pulldown are connected to a0
+int photocellVCC = 5;
+int photocellPin = A3;     // the cell and 10K pulldown are connected to a0
 int photocellReading;
+
 
 void setup() {
 #ifdef SERIAL_EN
@@ -44,10 +46,10 @@ void setup() {
   radio.sleep();
   sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY == RF69_433MHZ ? 433 : FREQUENCY == RF69_868MHZ ? 868 : 915);
   DEBUGln(buff);
-
   // Start up the library
   sensors.begin();
-
+  pinMode(photocellVCC, OUTPUT);
+  
 }
 void loop() {
 
@@ -61,8 +63,9 @@ void loop() {
   DEBUG("Temperature for the device 1 (index 0) is: ");
   temp = sensors.getTempCByIndex(0) / 1;
   DEBUGln(temp);
-
+digitalWrite(photocellVCC, HIGH);
   photocellReading = analogRead(photocellPin);
+digitalWrite(photocellVCC, LOW);
   photocellReading = 1023 - photocellReading;
   DEBUG("Analog reading = ");
   DEBUGln(photocellReading);
