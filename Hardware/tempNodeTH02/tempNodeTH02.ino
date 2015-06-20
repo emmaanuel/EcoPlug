@@ -98,13 +98,13 @@ void loop() {
   dtostrf(temp, 0, 2, str_temp);
   dtostrf(rh, 0, 2, str_rh);
 
-  sprintf(buff, "TH|T:%s|H:%s", str_temp , str_rh);
+  sprintf(buff, "T|%s|%s|", str_temp , str_rh);
   byte sendSize = strlen(buff);
   DEBUG("Sending[");
   DEBUG(sendSize);
   DEBUG("]: ");
   DEBUG(buff);
-  if (radio.sendWithRetry(GATEWAYID, buff, sendSize)) {
+  if (radio.sendWithRetry(GATEWAYID, buff, sendSize, RFM69Retry, RFM69RetryTimeout)) {
     DEBUGln(" ok!");
   } else {
     DEBUGln(" nothing...");

@@ -26,15 +26,16 @@
 
 
 RFM69 radio;
-bool promiscuousMode = false; //sniff all packets on the same network
+bool promiscuousMode = true; //sniff all packets on the same network
 char buff[50];
 char ligne1[20] = "Cible: ?";
 char ligne2[20] = "Zone: ?";
 char ligne3[20] = "Temp: 22.50";
 char ligne4[20] = "Status: ON";
-float cible = 19;
+float cible = 20;
 int zone = 3;
 char rooms[][15] = {"?", "Garage", "Juliette", "Salon", "Jardin", "Thermostat"};
+float rooms_temps[6];
 
 /* -------------------------------------------------------- */
 /* ----                Blyss Spoofer API               ---- */
@@ -84,7 +85,7 @@ void setup() {
   radio.initialize(FREQUENCY, NODEID, NETWORKID);
   radio.encrypt(ENCRYPTKEY);
   radio.promiscuous(promiscuousMode);
-  #ifdef IS_RFM69HW
+#ifdef IS_RFM69HW
   radio.setHighPower(); //uncomment only for RFM69HW!
 #endif
   radio.sleep();
@@ -112,62 +113,61 @@ void setup() {
   set_global_channel(RF_BUFFER, CH_D);
   pinMode(TX_433_PIN, OUTPUT);
   SIG_LOW();
-
-      for (int i = 0; i < 3; i++) {
-      storeOpen();
-      storeClose();
-    }
-  
+/*
+  for (int i = 0; i < 3; i++) {
+    storeOpen();
+    storeClose();
+  }
+*/
   updateScreen();
 }
 void loop() {
-  u8g.firstPage();
-  do {
-    draw();
-  } while ( u8g.nextPage() );
+
 
   if (radio.receiveDone())
   {
     for (byte i = 0; i < radio.DATALEN; i++)
       buff[i] = (char)radio.DATA[i];
     buff[radio.DATALEN] = '\0';
-    if ((radio.TARGETID==NODEID) && radio.ACKRequested())
+    if ((radio.TARGETID == NODEID) && radio.ACKRequested())
     {
-      radio.sendACK();
+      // radio.sendACK();
     }
-    DEBUGln(buff);
-    DEBUG("From: ");
-    DEBUG(radio.SENDERID);
-    DEBUG(" -> ");
-    DEBUG(radio.TARGETID);
-    DEBUG(" : ");
-    DEBUGln(rooms[radio.SENDERID]);
+    if (radio.DATALEN > 0) {
+      DEBUGln(buff);
+      DEBUG("From: ");
+      DEBUG(radio.SENDERID);
+      DEBUG(" -> ");
+      DEBUG(radio.TARGETID);
+      DEBUG(" : ");
+      DEBUGln(rooms[radio.SENDERID]);
 
-    String msg = String(buff);
-    if (msg.indexOf(':') != -1) {
-      action = msg.substring(msg.indexOf(':') + 1);
-      if (action.indexOf('|') != -1) {
-        action_arg = action.substring(action.indexOf('|') + 1);
-        action = action.substring(0, action.indexOf('|'));
+
+      String msg = String(buff);
+      if (msg.indexOf(':') != -1) {
+        action = msg.substring(msg.indexOf(':') + 1);
+        if (action.indexOf('|') != -1) {
+          action_arg = action.substring(action.indexOf('|') + 1);
+          action = action.substring(0, action.indexOf('|'));
+        }
+        DEBUGln(action);
+        if (action == "STORE_OPEN")
+          storeOpen();
+        if (action == "STORE_CLOSE")
+          storeClose();
+        if (action == "HEATER_ON")
+          heaterOn();
+        if (action == "HEATER_OFF")
+          heaterOff();
+        if (action == "SET_CIBLE")
+          setCible(action_arg);
+        if (action == "SET_ZONE")
+          setZone(action_arg);
       }
-      DEBUGln(action);
-      if (action == "STORE_OPEN")
-        storeOpen();
-      if (action == "STORE_CLOSE")
-        storeClose();
-      if (action == "HEATER_ON")
-        heaterOn();
-      if (action == "HEATER_OFF")
-        heaterOff();
-      if (action == "SET_CIBLE")
-        setCible(action_arg);
-      if (action == "SET_ZONE")
-        setZone(action_arg);
+      Blink(LED, 3);
     }
-
-    Blink(LED, 3);
   }
-  delay(1);
+  delay(0.1);
 }
 
 void draw(void) {
@@ -184,6 +184,10 @@ void updateScreen() {
   dtostrf(cible, 5, 2, buffcible);
   sprintf(ligne1, "Cible: %s", buffcible);
   sprintf(ligne2, "Zone: %s", rooms[zone]);
+  u8g.firstPage();
+  do {
+    draw();
+  } while ( u8g.nextPage() );
 
 }
 

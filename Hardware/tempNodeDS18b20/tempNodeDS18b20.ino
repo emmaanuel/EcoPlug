@@ -75,13 +75,13 @@ digitalWrite(photocellVCC, LOW);
   dtostrf(temp, 0, 2, str_temp);
   dtostrf(photocellReading, 0, 0, str_light);
 
-  sprintf(buff, "TL|T:%s|L:%s", str_temp , str_light);
+  sprintf(buff, "T|%s||%s", str_temp , str_light);
   byte sendSize = strlen(buff);
   DEBUG("Sending[");
   DEBUG(sendSize);
   DEBUG("]: ");
   DEBUG(buff);
-  if (radio.sendWithRetry(GATEWAYID, buff, sendSize)) {
+  if (radio.sendWithRetry(GATEWAYID, buff, sendSize, RFM69Retry, RFM69RetryTimeout)) {
     DEBUGln(" ok!");
   } else {
     DEBUGln(" nothing...");

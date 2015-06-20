@@ -125,7 +125,7 @@ int processAction(int id, String action) {
   action.toCharArray(actionbuff, 50);
   sprintf(buff, "ACT:%s", actionbuff);
   byte sendSize = strlen(buff);
-  radio.sendWithRetry(id, buff, sendSize, 0, 100);
+  radio.sendWithRetry(id, buff, sendSize, RFM69Retry, RFM69RetryTimeout);
 }
 
 void Blink(byte PIN, int DELAY_MS)

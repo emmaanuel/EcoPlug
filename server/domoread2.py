@@ -35,22 +35,21 @@ while (1==1):
                                         msgtype = ""
                                         if (msg.find('|')>-1):
                                                 msgtype = msg.split('|')[1]
-                                        if (msgtype == "PW"):
-                                                hc = getValue(msg.split('|')[2])
-                                                hp = getValue(msg.split('|')[3])
-                                                power = getValue(msg.split('|')[4])
-                                                tf = getValue(msg.split('|')[5])
+                                        if (msgtype == "P"):
+                                                hc = getValue(msg.split('|')[4])
+                                                hp = getValue(msg.split('|')[5])
+                                                power = getValue(msg.split('|')[2])
+                                                tf = getValue(msg.split('|')[3])
                                                 c = pycurl.Curl()
                                                 c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/edf')
                                                 c.setopt(pycurl.POST, 1)
                                                 c.setopt(pycurl.POSTFIELDS, '{"pw":"'+power+'","tf":"'+tf+'","hc":"'+hc+'","hp":"'+hp+'"}')
                                                 c.perform()
                                                 c.close()
-                                        elif (msgtype == "TH"):
-                                                node = getValue(msg.split('|')[0])
+                                        elif (msgtype == "T"):
                                                 temp = getValue(msg.split('|')[2])
                                                 humi = getValue(msg.split('|')[3])
-                                                rx = getValue(msg.split('|')[4])
+                                                light = getValue(msg.split('|')[4])
                                                 c = pycurl.Curl()
                                                 c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/temp')
                                                 c.setopt(pycurl.POST, 1)
