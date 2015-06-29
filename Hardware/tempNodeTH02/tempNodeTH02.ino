@@ -2,7 +2,7 @@
 #include <SPI.h>
 #include <LowPower.h> //get library from: https://github.com/lowpowerlab/lowpower
 #include <TH02.h>
-#include <I2C.h>
+#include <Wire.h>
 #include <ECOCommons.h>
 
 #define NODEID        2    //unique for each node on same network
@@ -11,8 +11,8 @@
 #define FREQUENCY   RF69_868MHZ
 //#define IS_RFM69HW    //uncomment only for RFM69HW! Leave out if you have RFM69W!
 #define LED           9 // Moteinos have LEDs on D9
-#define FLASH_SS      8 // and FLASH SS on D8
 #define SERIAL_BAUD   115200
+#define TH02VCC 4
 
 //#define SERIAL_EN                //comment out if you don't want any serial output
 
@@ -25,12 +25,14 @@
 #endif
 
 
-char payload[] = "123 ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
 RFM69 radio;
-TH02 sensor;
+TH02 sensor(TH02_I2C_ADDR);
 char buff[50];
 
 void setup() {
+  pinMode(TH02VCC, OUTPUT);
+  digitalWrite(TH02VCC, HIGH);
 #ifdef SERIAL_EN
   Serial.begin(SERIAL_BAUD);
 #endif
@@ -44,34 +46,17 @@ void setup() {
   DEBUGln(buff);
 
   uint8_t devID;
-
-  I2c.begin();
-  I2c.pullup(true); // Enable I2C Internal pullup
-  I2c.setSpeed(1);  // Set I2C to 400Khz
-
-  DEBUGln("\r\nTH02 Demo");
-
-  // TH02 ID is 4 MSB
-  devID = sensor.getId() >> 4;
-
+  Wire.begin();
+  sensor.getId(&devID);
   DEBUG("TH02 device ID = 0x");
   DEBUGln(devID);
-
-  if (devID == 0x5)
-  {
-    DEBUGln("TH02 device ID match !");
-    DEBUG("TH02 Status = 0x");
-    DEBUGln(sensor.getStatus());
-    DEBUG("TH02 Config = 0x");
-    DEBUGln(sensor.getConfig());
-  }
 
 }
 void loop() {
   float temp = 0, rh = 0;
-  //uint8_t status;
-
   DEBUG("Starting Temperature conversion.");
+  digitalWrite(TH02VCC, HIGH);
+  delay(15);
   sensor.startTempConv();
   sensor.waitEndConversion();
   DEBUGln(".done!");
@@ -92,13 +77,13 @@ void loop() {
   DEBUG("Raw Humidity = ");
   DEBUG(rh);
   DEBUGln("%");
-
+  digitalWrite(TH02VCC, LOW);
   char str_temp[6];
   char str_rh[6];
   dtostrf(temp, 0, 2, str_temp);
   dtostrf(rh, 0, 2, str_rh);
 
-  sprintf(buff, "T|%s|%s|", str_temp , str_rh);
+  sprintf(buff, "TH|T:%s|H:%s", str_temp , str_rh);
   byte sendSize = strlen(buff);
   DEBUG("Sending[");
   DEBUG(sendSize);
