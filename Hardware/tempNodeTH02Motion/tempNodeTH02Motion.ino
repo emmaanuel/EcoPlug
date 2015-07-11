@@ -2,7 +2,7 @@
 #include <SPI.h>
 #include <LowPower.h> //get library from: https://github.com/lowpowerlab/lowpower
 #include <TH02.h>
-#include <I2C.h>
+#include <Wire.h>
 #include <ECOCommons.h>
 
 #define NODEID        3    //unique for each node on same network
@@ -28,7 +28,7 @@
 
 char payload[] = "123 ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 RFM69 radio;
-TH02 sensor;
+TH02 sensor(TH02_I2C_ADDR);
 char buff[50];
 volatile boolean motionDetected = false;
 
@@ -47,28 +47,13 @@ void setup() {
   sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY == RF69_433MHZ ? 433 : FREQUENCY == RF69_868MHZ ? 868 : 915);
   DEBUGln(buff);
 
-  uint8_t devID;
-
-  I2c.begin();
-  I2c.pullup(true); // Enable I2C Internal pullup
-  I2c.setSpeed(1);  // Set I2C to 400Khz
-
   DEBUGln("\r\nTH02 Demo");
 
-  // TH02 ID is 4 MSB
-  devID = sensor.getId() >> 4;
-
+  uint8_t devID;
+  Wire.begin();
+  sensor.getId(&devID);
   DEBUG("TH02 device ID = 0x");
   DEBUGln(devID);
-
-  if (devID == 0x5)
-  {
-    DEBUGln("TH02 device ID match !");
-    DEBUG("TH02 Status = 0x");
-    DEBUGln(sensor.getStatus());
-    DEBUG("TH02 Config = 0x");
-    DEBUGln(sensor.getConfig());
-  }
 
 }
 void loop() {
@@ -76,7 +61,7 @@ void loop() {
   DEBUGln(motionDetected);
   if (motionDetected) {
     DEBUGln("MOTION DETECTED!...");
-    sprintf(buff, "M");
+    sprintf(buff, "E|MOTION");
     sendBuff();
     Blink(LED, 3000);
   }

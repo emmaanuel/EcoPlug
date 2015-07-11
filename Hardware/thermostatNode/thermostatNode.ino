@@ -9,7 +9,6 @@
 #define FREQUENCY   RF69_868MHZ
 //#define IS_RFM69HW    //uncomment only for RFM69HW! Leave out if you have RFM69W!
 #define LED           9 // Moteinos have LEDs on D9
-#define FLASH_SS      8 // and FLASH SS on D8
 #define SERIAL_BAUD   57600
 #define TX_433_PIN 3
 #define RELAY 4
@@ -34,8 +33,9 @@ char ligne3[20] = "Temp: 22.50";
 char ligne4[20] = "Status: ON";
 float cible = 20;
 int zone = 3;
-char rooms[][15] = {"?", "Garage", "Juliette", "Salon", "Jardin", "Thermostat"};
-float rooms_temps[6];
+boolean currentStatus = false;
+char rooms[][15] = {"?", "Raspberry", "Juliette", "Salon", "Jardin", "Thermostat", "Garage"};
+float rooms_temps[7] = {0,0,0,0,0,0,0};
 
 /* -------------------------------------------------------- */
 /* ----                Blyss Spoofer API               ---- */
@@ -113,12 +113,12 @@ void setup() {
   set_global_channel(RF_BUFFER, CH_D);
   pinMode(TX_433_PIN, OUTPUT);
   SIG_LOW();
-/*
+
   for (int i = 0; i < 3; i++) {
     storeOpen();
     storeClose();
   }
-*/
+
   updateScreen();
 }
 void loop() {
@@ -129,10 +129,6 @@ void loop() {
     for (byte i = 0; i < radio.DATALEN; i++)
       buff[i] = (char)radio.DATA[i];
     buff[radio.DATALEN] = '\0';
-    if ((radio.TARGETID == NODEID) && radio.ACKRequested())
-    {
-      // radio.sendACK();
-    }
     if (radio.DATALEN > 0) {
       DEBUGln(buff);
       DEBUG("From: ");
@@ -141,28 +137,43 @@ void loop() {
       DEBUG(radio.TARGETID);
       DEBUG(" : ");
       DEBUGln(rooms[radio.SENDERID]);
-
-
       String msg = String(buff);
-      if (msg.indexOf(':') != -1) {
-        action = msg.substring(msg.indexOf(':') + 1);
-        if (action.indexOf('|') != -1) {
-          action_arg = action.substring(action.indexOf('|') + 1);
-          action = action.substring(0, action.indexOf('|'));
+      if ((radio.TARGETID == NODEID) && radio.ACKRequested())
+      {
+        radio.sendACK();
+      }
+      if (msg.indexOf('|') != -1) {
+        String msgtype = msg.substring(0, 1);
+        if (msgtype == "A") {
+          String fullaction = msg.substring(msg.indexOf('|')+1);
+          DEBUGln(fullaction);
+          action = fullaction.substring(0, fullaction.indexOf('|'));
+          action_arg=fullaction.substring(fullaction.indexOf('|')+1);
+          action_arg=fullaction.substring(fullaction.indexOf('|')+1);
+          DEBUGln(action);
+          if (action == "STORE_OPEN")
+            storeOpen();
+          if (action == "STORE_CLOSE")
+            storeClose();
+          if (action == "HEATER_ON")
+            heaterOn();
+          if (action == "HEATER_OFF")
+            heaterOff();
+          if (action == "SET_CIBLE")
+            setCible(action_arg);
+          if (action == "SET_ZONE")
+            setZone(action_arg);
         }
-        DEBUGln(action);
-        if (action == "STORE_OPEN")
-          storeOpen();
-        if (action == "STORE_CLOSE")
-          storeClose();
-        if (action == "HEATER_ON")
-          heaterOn();
-        if (action == "HEATER_OFF")
-          heaterOff();
-        if (action == "SET_CIBLE")
-          setCible(action_arg);
-        if (action == "SET_ZONE")
-          setZone(action_arg);
+        if (msgtype == "T")  {
+          String t = msg.substring(msg.indexOf('|')+1);
+          t = t.substring(0, t.indexOf('|'));
+          DEBUG(radio.SENDERID);
+          DEBUG(":");
+          DEBUGln(t);
+          rooms_temps[radio.SENDERID]=t.toFloat();
+          updateScreen();
+        }
+
       }
       Blink(LED, 3);
     }
@@ -181,9 +192,13 @@ void draw(void) {
 
 void updateScreen() {
   char buffcible[6];
+  char buffTemp[6];
   dtostrf(cible, 5, 2, buffcible);
+  dtostrf(rooms_temps[zone], 5, 2, buffTemp);
   sprintf(ligne1, "Cible: %s", buffcible);
   sprintf(ligne2, "Zone: %s", rooms[zone]);
+  sprintf(ligne3, "Temp: %s", buffTemp);
+  sprintf(ligne4, "Status: %s", currentStatus ? "ON" : "OFF");
   u8g.firstPage();
   do {
     draw();
@@ -220,11 +235,15 @@ void storeClose() {
 
 void heaterOn() {
   DEBUGln("HEATER ON");
+  currentStatus = true;
+  updateScreen();
   digitalWrite(RELAY, HIGH);
 }
 
 void heaterOff() {
   DEBUGln("HEATER OFF");
+  currentStatus = false;
+  updateScreen();
   digitalWrite(RELAY, LOW);
 }
 

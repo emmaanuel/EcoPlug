@@ -83,7 +83,7 @@ void loop() {
   dtostrf(temp, 0, 2, str_temp);
   dtostrf(rh, 0, 2, str_rh);
 
-  sprintf(buff, "T|%s|%s", str_temp , str_rh);
+  sprintf(buff, "T|%s|%s|", str_temp , str_rh);
   byte sendSize = strlen(buff);
   DEBUG("Sending[");
   DEBUG(sendSize);
