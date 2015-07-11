@@ -118,15 +118,18 @@ function getLastTemp() {
 function insertTemp() {
 	$request = \Slim\Slim::getInstance()->request();
 	$temp = json_decode($request->getBody());
+	$t = (($temp->t == "")?null:$temp->t);
+	$h = (($temp->h == "")?null:$temp->h);
+	$l = (($temp->l=="")?null:$temp->l);
 	$sql = "INSERT INTO domo_temp VALUES(NOW(),:node,:temp,:humi,:rx,:light)";
 	try {
 		$db = getDB();
 		$stmt = $db->prepare($sql);
-		$stmt->bindParam("node", $temp->n);
-		$stmt->bindParam("temp", $temp->t);
-		$stmt->bindParam("humi", $temp->h);
-		$stmt->bindParam("rx", $temp->r);
-		$stmt->bindParam("light", $temp->l);
+		$stmt->bindParam("node", $temp->n );
+		$stmt->bindParam("temp", $t );
+		$stmt->bindParam("humi", $h );
+		$stmt->bindParam("rx", $temp->r );
+		$stmt->bindParam("light", $l);
 		$stmt->execute();
 		$db = null;
 	} catch(PDOException $e) {
