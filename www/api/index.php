@@ -1,5 +1,6 @@
 <?php
 include 'db.php';
+include '../security/security.php';
 require 'Slim/Slim.php';
 \Slim\Slim::registerAutoloader();
 
@@ -250,7 +251,7 @@ function insertMotion() {
 function getLastMotion() {
 	try {
 		$db = getDB();
-		$sql = "Select node as n, DATE_FORMAT(date, '%y-%m-%d %H:%i') as d from domo_motion ORDER BY date DESC LIMIT 5";
+		$sql = "Select node as n, date as d from domo_motion ORDER BY date DESC LIMIT 5";
 		$stmt = $db->prepare($sql);
 		$stmt->execute();
 		$motion = $stmt->fetchAll(PDO::FETCH_OBJ);
@@ -328,7 +329,7 @@ function getNextAction() {
 function getLastAction() {
 	try {
 		$db = getDB();
-		$sql = "Select date, action from domo_actions where processed=1 ORDER BY date DESC LIMIT 5";
+		$sql = "Select date, action, processed from domo_actions ORDER BY date DESC LIMIT 5";
 		$stmt = $db->prepare($sql);
 		$stmt->execute();
 		$action = $stmt->fetchAll(PDO::FETCH_OBJ);

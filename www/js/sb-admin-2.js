@@ -23,7 +23,7 @@
         });
 
         rooms_names = [
-        {n:1, name:"Garage"},
+        {n:6, name:"Garage"},
         {n:2, name:"Etage"},
         {n:3, name:"Salon"},
         {n:4, name:"Jardin"}];
@@ -32,7 +32,7 @@
         {node: "2", name:"Etage", color: "primary", icon: "fa-bed", temp:"22,5", rh:"45", date:"", light:null},
         {node: "3", name:"Salon", color: "green", icon: "fa-coffee", temp:"20", rh:"46", date:"", light:null},
         {node: "4", name:"Jardin", color: "yellow", icon: "fa-tree", temp:"", rh:"", date:"", light:"0"},
-        {node: "1", name:"Garage", color: "red", icon: "fa-car", temp:"22,5", rh:null, date:"", light:null}];
+        {node: "6", name:"Garage", color: "red", icon: "fa-car", temp:"22,5", rh:null, date:"", light:null}];
         $scope.lastEDFupdate = ".";
         $scope.HP="";
         $scope.HC="";
@@ -53,7 +53,7 @@
 
 
         getrooms = function() {
-            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/temp/last', headers: { 'X-Parse-Application-Id':'XXX', 'X-Parse-REST-API-Key':'YYY'}})
+            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/temp/last'})
             .success(function(data, status) {
                 data.temp.forEach(function(element, index, array){
                     updateRoom(element.d, element.n, element.t, element.h, element.l)
@@ -65,7 +65,7 @@
         };
 
         getEDF = function() {
-            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/edf/last', headers: { 'X-Parse-Application-Id':'XXX', 'X-Parse-REST-API-Key':'YYY'}})
+            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/edf/last'})
             .success(function(data, status) {
                 data.edf.forEach(function(element, index, array){
                     $scope.g.refresh(element.pw);
@@ -80,7 +80,7 @@
         };
 
         getParamMotion = function() {
-            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/params/motion', headers: { 'X-Parse-Application-Id':'XXX', 'X-Parse-REST-API-Key':'YYY'}})
+            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/params/motion'})
             .success(function(data, status) {
                 if (data.params[0].value == "enabled") {
                     $scope.params_motion = true;
@@ -94,11 +94,24 @@
         };
 
         getMotion = function() {
-            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/motion/last', headers: { 'X-Parse-Application-Id':'XXX', 'X-Parse-REST-API-Key':'YYY'}})
+            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/motion/last'})
             .success(function(data, status) {
                 $scope.motions = Array();
                 data.motion.forEach(function(element, index, array){
                     $scope.motions.push({n:getRoomsName(element.n),d:element.d});
+                });
+            })
+            .error(function(data, status) {
+                console.log("Error");
+            });
+        };
+
+        getAction = function() {
+            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/action/last'})
+            .success(function(data, status) {
+                $scope.actions = Array();
+                data.action.forEach(function(element, index, array){
+                    $scope.actions.push({d:element.date,a:element.action,p:element.processed});
                 });
             })
             .error(function(data, status) {
@@ -124,12 +137,14 @@
                     $scope.graph.redraw();
                 }
                 getMotion();
+                getAction();
                 minuteIntervalFunction();
             }, 60000)
         };    
         minuteIntervalFunction();
         getrooms();
         getMotion();
+        getAction();
         getParamMotion();
 
         secondIntervalFunction = function(){
@@ -156,7 +171,19 @@
 
         $scope.items = ['item1', 'item2', 'item3'];
 
+        $scope.voletUp = function() {
+            $http.post('http://domo.emmaanuel.com/api/action', '{"a":"STORE_OPEN|"}')
+            .error(function(data, status) {
+                alert("Erreur lors de l'envoi de la commande");
+            });
+        }
 
+        $scope.voletDown = function() {
+            $http.post('http://domo.emmaanuel.com/api/action', '{"a":"STORE_CLOSE|"}')
+            .error(function(data, status) {
+                alert("Erreur lors de l'envoi de la commande");
+            });
+        }
 
     }]);
 
