@@ -13,7 +13,7 @@
 #define TX_433_PIN 3
 #define RELAY 4
 
-#define SERIAL_EN                //comment out if you don't want any serial output
+//#define SERIAL_EN                //comment out if you don't want any serial output
 
 #ifdef SERIAL_EN
 #define DEBUG(input)   {Serial.print(input);}
@@ -35,7 +35,22 @@ float cible = 20;
 int zone = 3;
 boolean currentStatus = false;
 char rooms[][15] = {"?", "Raspberry", "Juliette", "Salon", "Jardin", "Thermostat", "Garage"};
-float rooms_temps[7] = {0,0,0,0,0,0,0};
+float rooms_temps[7] = {0, 0, 0, 0, 0, 0, 0};
+
+const int pin_A = 6;
+const int pin_B = 7;
+int n = 0;
+unsigned char encoder_A;
+unsigned char encoder_B;
+unsigned char encoder_A_prev = 0;
+unsigned long currentTime;
+unsigned long loopTime;
+
+const int buttonpin=5;
+int buttonreading;           // the current reading from the input pin
+int buttonprevious = LOW;    // the previous reading from the input pin
+long buttontime = 0;         // the last time the output pin was toggled
+long buttondebounce = 200;   // the debounce time, increase if the output flickers
 
 /* -------------------------------------------------------- */
 /* ----                Blyss Spoofer API               ---- */
@@ -114,12 +129,16 @@ void setup() {
   pinMode(TX_433_PIN, OUTPUT);
   SIG_LOW();
 
-  for (int i = 0; i < 3; i++) {
+/*  for (int i = 0; i < 3; i++) {
     storeOpen();
     storeClose();
   }
-
+*/
   updateScreen();
+  pinMode(pin_A, INPUT);
+  pinMode(pin_B, INPUT);
+  currentTime = millis();
+  loopTime = currentTime; 
 }
 void loop() {
 
@@ -145,11 +164,11 @@ void loop() {
       if (msg.indexOf('|') != -1) {
         String msgtype = msg.substring(0, 1);
         if (msgtype == "A") {
-          String fullaction = msg.substring(msg.indexOf('|')+1);
+          String fullaction = msg.substring(msg.indexOf('|') + 1);
           DEBUGln(fullaction);
           action = fullaction.substring(0, fullaction.indexOf('|'));
-          action_arg=fullaction.substring(fullaction.indexOf('|')+1);
-          action_arg=fullaction.substring(fullaction.indexOf('|')+1);
+          action_arg = fullaction.substring(fullaction.indexOf('|') + 1);
+          action_arg = fullaction.substring(fullaction.indexOf('|') + 1);
           DEBUGln(action);
           if (action == "STORE_OPEN")
             storeOpen();
@@ -165,12 +184,12 @@ void loop() {
             setZone(action_arg);
         }
         if (msgtype == "T")  {
-          String t = msg.substring(msg.indexOf('|')+1);
+          String t = msg.substring(msg.indexOf('|') + 1);
           t = t.substring(0, t.indexOf('|'));
           DEBUG(radio.SENDERID);
           DEBUG(":");
           DEBUGln(t);
-          rooms_temps[radio.SENDERID]=t.toFloat();
+          rooms_temps[radio.SENDERID] = t.toFloat();
           updateScreen();
         }
 
@@ -178,7 +197,43 @@ void loop() {
       Blink(LED, 3);
     }
   }
+  currentTime = millis();
+  if(currentTime >= (loopTime + 2)){
+    checkButton();
+    loopTime = currentTime;
+  }
   delay(0.1);
+}
+
+void checkButton(void) {
+  encoder_A = digitalRead(pin_A);    // Read encoder pins
+  encoder_B = digitalRead(pin_B);
+  if ((!encoder_A) && (encoder_A_prev)) {
+    // A has gone from high to low
+    if (encoder_B) {
+      // B is high so clockwise
+      // increase the brightness, dont go over 255
+      cible += 0.5;
+      updateScreen();
+      
+    }
+    else {
+      // B is low so counter-clockwise
+      // decrease the brightness, dont go below 0
+       cible -= 0.5;
+       updateScreen();
+    }
+
+  }
+  encoder_A_prev = encoder_A;     // Store value of A for next time
+
+//READ SWITCH BUTTON
+  buttonreading = digitalRead(buttonpin);
+  if (buttonreading == HIGH && buttonprevious == LOW && millis() - buttontime > buttondebounce) {
+    rotateZone();
+    buttontime = millis();    
+  }
+  buttonprevious = buttonreading;
 }
 
 void draw(void) {
@@ -197,7 +252,7 @@ void updateScreen() {
   dtostrf(rooms_temps[zone], 5, 2, buffTemp);
   sprintf(ligne1, "Cible: %s", buffcible);
   sprintf(ligne2, "Zone: %s", rooms[zone]);
-  sprintf(ligne3, "Temp: %s", buffTemp);
+  sprintf(ligne3, "Temp: %s", (rooms_temps[zone]==0)?"Inconnue":buffTemp);
   sprintf(ligne4, "Status: %s", currentStatus ? "ON" : "OFF");
   u8g.firstPage();
   do {
@@ -211,6 +266,19 @@ void Blink(byte PIN, int DELAY_MS)
   digitalWrite(PIN, HIGH);
   delay(DELAY_MS);
   digitalWrite(PIN, LOW);
+}
+
+void rotateZone() {
+  zone++;
+  int maxtry=7;
+  if (zone>6) zone =1;
+  while ((rooms_temps[zone] == 0) && (maxtry >0)) {
+    zone++;
+    maxtry--;
+    if (zone>6) zone =1;
+  }
+  DEBUGln(zone);
+  updateScreen();
 }
 
 void storeOpen() {
