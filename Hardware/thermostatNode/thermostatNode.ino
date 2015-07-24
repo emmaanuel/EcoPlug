@@ -44,7 +44,8 @@ unsigned char encoder_A;
 unsigned char encoder_B;
 unsigned char encoder_A_prev = 0;
 unsigned long currentTime;
-unsigned long loopTime;
+unsigned long buttonLoopTime;
+unsigned long sleepTime;
 
 const int buttonpin=5;
 int buttonreading;           // the current reading from the input pin
@@ -97,13 +98,7 @@ void setup() {
 #ifdef SERIAL_EN
   Serial.begin(SERIAL_BAUD);
 #endif
-  radio.initialize(FREQUENCY, NODEID, NETWORKID);
-  radio.encrypt(ENCRYPTKEY);
-  radio.promiscuous(promiscuousMode);
-#ifdef IS_RFM69HW
-  radio.setHighPower(); //uncomment only for RFM69HW!
-#endif
-  radio.sleep();
+  initRadio();
   sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY == RF69_433MHZ ? 433 : FREQUENCY == RF69_868MHZ ? 868 : 915);
   DEBUGln(buff);
   uint8_t devID;
@@ -129,16 +124,12 @@ void setup() {
   pinMode(TX_433_PIN, OUTPUT);
   SIG_LOW();
 
-/*  for (int i = 0; i < 3; i++) {
-    storeOpen();
-    storeClose();
-  }
-*/
   updateScreen();
   pinMode(pin_A, INPUT);
   pinMode(pin_B, INPUT);
   currentTime = millis();
-  loopTime = currentTime; 
+  buttonLoopTime = currentTime; 
+  sleepTime = currentTime;
 }
 void loop() {
 
@@ -195,14 +186,31 @@ void loop() {
 
       }
       Blink(LED, 3);
+      sleepTime = millis();
     }
   }
   currentTime = millis();
-  if(currentTime >= (loopTime + 2)){
+  if(currentTime >= (buttonLoopTime + 2)){
     checkButton();
-    loopTime = currentTime;
+    buttonLoopTime = currentTime;
+  }
+  if(currentTime >= (sleepTime + 40000)){
+    initRadio();  // to correct some hanging problem
+    heaterOn(); //to detect the problem
+    sleepTime = currentTime;
+    Blink(LED, 300);
   }
   delay(0.1);
+}
+
+void initRadio(){
+  radio.initialize(FREQUENCY, NODEID, NETWORKID);
+  radio.encrypt(ENCRYPTKEY);
+  radio.promiscuous(promiscuousMode);
+#ifdef IS_RFM69HW
+  radio.setHighPower(); //uncomment only for RFM69HW!
+#endif
+  radio.sleep();
 }
 
 void checkButton(void) {
