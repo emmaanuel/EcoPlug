@@ -7,6 +7,7 @@ import time
 import pycurl
 import json
 from io import BytesIO
+import sys
 
 def processMsg(msg, sender, rssi):
 	if (msg.find('|')>-1):
@@ -36,7 +37,7 @@ def processMsg(msg, sender, rssi):
 			c.close()
 		if (msgtype == "E"):
 			event = msg.split('|')[1]
-			print "EVENT: " + event
+			print time.strftime("%Y-%m-%d %H:%M : ") + "EVENT: " + event
 			if (event == "MOTION"):
 				c = pycurl.Curl()
 				c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/motion')
@@ -62,12 +63,12 @@ def processLight(light):
 			lastDayStatus = "NIGHT"
 			print time.strftime("%Y-%m-%d %H:%M : ") +"lastDayStatus change : " + lastDayStatus
 	if (newDayStatus != currentDayStatus):
-		print "DAY_STATUS change : " + newDayStatus
+		print time.strftime("%Y-%m-%d %H:%M : ") + "DAY_STATUS change : " + newDayStatus
 		currentDayStatus = newDayStatus
 		if (newDayStatus == "DAY"):
-			action = "STORE_OPEN"
+			action = "STORE_OPEN|"
 		else:
-			action = "STORE_CLOSE"
+			action = "STORE_CLOSE|"
 		textToSend ="A|" + action.encode() + "|"
 		if (radio.sendWithRetry(5, textToSend, 3, 40)):
 			c = pycurl.Curl()
@@ -117,7 +118,7 @@ while True:
 		rssi = radio.RSSI
 		if radio.ACKRequested():
 			radio.sendACK()
-		print "%s from %s RSSI:%s" % (message, sender, rssi)
+		print time.strftime("%Y-%m-%d %H:%M : ") + "%s from %s RSSI:%s" % (message, sender, rssi)
 		processMsg(message, sender, rssi)
 	except IOError, e:
 		print time.strftime("%Y-%m-%d %H:%M : ") + "Erreur : ", e
@@ -125,7 +126,6 @@ while True:
 		reopen = True
 	except Exception, e:
 		print time.strftime("%Y-%m-%d %H:%M : ") + "Erreur : ", e
-		print time.strftime("%Y-%m-%d %H:%M : ") + "errormsg: ", msg
 		msg=''
 		sys.stdout.flush()
 
