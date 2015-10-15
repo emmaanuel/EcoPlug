@@ -46,8 +46,10 @@ unsigned char encoder_A_prev = 0;
 unsigned long currentTime;
 unsigned long buttonLoopTime;
 unsigned long sleepTime;
+unsigned long refreshScreenTime;
+unsigned long nbMessage=0;
 
-const int buttonpin=5;
+const int buttonpin = 5;
 int buttonreading;           // the current reading from the input pin
 int buttonprevious = LOW;    // the previous reading from the input pin
 long buttontime = 0;         // the last time the output pin was toggled
@@ -90,6 +92,8 @@ String action = "";
 String action_arg = "";
 /* ------------------------------------------------------ */
 
+void(* resetFunc) (void) = 0;//declare reset function at address 0
+
 void setup() {
   delay(100);
   pinMode(LED, OUTPUT);
@@ -128,14 +132,15 @@ void setup() {
   pinMode(pin_A, INPUT);
   pinMode(pin_B, INPUT);
   currentTime = millis();
-  buttonLoopTime = currentTime; 
+  buttonLoopTime = currentTime;
   sleepTime = currentTime;
+  refreshScreenTime = currentTime;
+  Blink(LED, 500);
 }
 void loop() {
-
-
   if (radio.receiveDone())
   {
+    nbMessage=nbMessage+1;
     for (byte i = 0; i < radio.DATALEN; i++)
       buff[i] = (char)radio.DATA[i];
     buff[radio.DATALEN] = '\0';
@@ -181,29 +186,35 @@ void loop() {
           DEBUG(":");
           DEBUGln(t);
           rooms_temps[radio.SENDERID] = t.toFloat();
-          updateScreen();
         }
 
       }
-      Blink(LED, 3);
-      sleepTime = millis();
     }
+    updateScreen();
+    Blink(LED, 10);
+    sleepTime = millis();
+    
   }
   currentTime = millis();
-  if(currentTime >= (buttonLoopTime + 2)){
+  if (currentTime >= (buttonLoopTime + 2)) {
     checkButton();
     buttonLoopTime = currentTime;
   }
-  if(currentTime >= (sleepTime + 40000)){
-    initRadio();  // to correct some hanging problem
-    heaterOn(); //to detect the problem
+  if (currentTime >= (refreshScreenTime + 500)) {
+    updateScreen();
+    refreshScreenTime = currentTime;
+  }
+  if (currentTime >= (sleepTime + 120000)) {
+    DEBUGln("RESET");
+    digitalWrite(LED, HIGH);
+    updateScreen();
     sleepTime = currentTime;
-    Blink(LED, 300);
+  //resetFunc();
   }
   delay(0.1);
 }
 
-void initRadio(){
+void initRadio() {
   radio.initialize(FREQUENCY, NODEID, NETWORKID);
   radio.encrypt(ENCRYPTKEY);
   radio.promiscuous(promiscuousMode);
@@ -223,23 +234,24 @@ void checkButton(void) {
       // increase the brightness, dont go over 255
       cible += 0.5;
       updateScreen();
-      
+
     }
     else {
       // B is low so counter-clockwise
       // decrease the brightness, dont go below 0
-       cible -= 0.5;
-       updateScreen();
+      cible -= 0.5;
+      updateScreen();
     }
 
   }
   encoder_A_prev = encoder_A;     // Store value of A for next time
 
-//READ SWITCH BUTTON
+  //READ SWITCH BUTTON
   buttonreading = digitalRead(buttonpin);
   if (buttonreading == HIGH && buttonprevious == LOW && millis() - buttontime > buttondebounce) {
+    initRadio();
     rotateZone();
-    buttontime = millis();    
+    buttontime = millis();
   }
   buttonprevious = buttonreading;
 }
@@ -260,8 +272,10 @@ void updateScreen() {
   dtostrf(rooms_temps[zone], 5, 2, buffTemp);
   sprintf(ligne1, "Cible: %s", buffcible);
   sprintf(ligne2, "Zone: %s", rooms[zone]);
-  sprintf(ligne3, "Temp: %s", (rooms_temps[zone]==0)?"Inconnue":buffTemp);
-  sprintf(ligne4, "Status: %s", currentStatus ? "ON" : "OFF");
+  sprintf(ligne3, "Temp: %s", (rooms_temps[zone] == 0) ? "Inconnue" : buffTemp);
+//  sprintf(ligne4, "Status: %s", currentStatus ? "ON" : "OFF");
+sprintf(ligne4, "ct: %lu %d %d", nbMessage, radio._mode,radio.DATALEN);
+
   u8g.firstPage();
   do {
     draw();
@@ -278,12 +292,12 @@ void Blink(byte PIN, int DELAY_MS)
 
 void rotateZone() {
   zone++;
-  int maxtry=7;
-  if (zone>6) zone =1;
-  while ((rooms_temps[zone] == 0) && (maxtry >0)) {
+  int maxtry = 7;
+  if (zone > 6) zone = 1;
+  while ((rooms_temps[zone] == 0) && (maxtry > 0)) {
     zone++;
     maxtry--;
-    if (zone>6) zone =1;
+    if (zone > 6) zone = 1;
   }
   DEBUGln(zone);
   updateScreen();
