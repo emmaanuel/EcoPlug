@@ -85,14 +85,14 @@ def storeClose():
 def storeOpen():      
 	global pinUp                                                                                             
         print time.strftime("%Y-%m-%d %H:%M : ") + "STORE OPEN"                     
-        GPIO.output(pinUP, GPIO.HIGH)                                                                         
+        GPIO.output(pinUp, GPIO.HIGH)                                                                         
         time.sleep(0.1)                                                                                    
-        GPIO.output(pinUP, GPIO.LOW)                                                                                  
+        GPIO.output(pinUp, GPIO.LOW)                                                                                  
                                                                                                           
 GPIO.setmode(GPIO.BOARD)                                                                                           
 GPIO.setup(pinDown, GPIO.OUT)                                                                                  
-GPIO.setup(pinUP, GPIO.OUT)                                                                                   
-GPIO.output(pinUP, GPIO.LOW)                                                                                  
+GPIO.setup(pinUp, GPIO.OUT)                                                                                   
+GPIO.output(pinUp, GPIO.LOW)                                                                                  
 GPIO.output(pinDown, GPIO.LOW)  
 
 radio = RFM69.RFM69(RF69_868MHZ, 1, 100, False)
