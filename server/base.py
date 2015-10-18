@@ -8,6 +8,7 @@ import pycurl
 import json
 from io import BytesIO
 import sys
+import RPi.GPIO as GPIO
 
 def processMsg(msg, sender, rssi):
 	if (msg.find('|')>-1):
@@ -48,14 +49,14 @@ def processMsg(msg, sender, rssi):
 
 def processLight(light):
 	global lastDayStatus,currentDayStatus,newDayStatus
-	if (int(light) >50):
+	if (int(light) >30):
 		if (lastDayStatus == "DAY"):
 			newDayStatus = "DAY"
 			print time.strftime("%Y-%m-%d %H:%M : ") + "newDayStatus change : " + newDayStatus
 		else:
 			lastDayStatus = "DAY"
 			print time.strftime("%Y-%m-%d %H:%M : ") +"lastDayStatus change : " + lastDayStatus
-	elif (int(light) <50):
+	elif (int(light) <30):
 		if (lastDayStatus == "NIGHT"):
 			newDayStatus = "NIGHT"
 			print time.strftime("%Y-%m-%d %H:%M : ") +"newDayStatus change : " + newDayStatus
@@ -66,18 +67,33 @@ def processLight(light):
 		print time.strftime("%Y-%m-%d %H:%M : ") + "DAY_STATUS change : " + newDayStatus
 		currentDayStatus = newDayStatus
 		if (newDayStatus == "DAY"):
-			action = "STORE_OPEN|"
+			storeOpen()
 		else:
-			action = "STORE_CLOSE|"
-		textToSend ="A|" + action.encode() + "|"
-		if (radio.sendWithRetry(5, textToSend, 3, 40)):
-			c = pycurl.Curl()
-			c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/action/log')
-			c.setopt(pycurl.POST, 1)
-			c.setopt(pycurl.POSTFIELDS, '{"a":"'+action+'"}')
-			c.perform()
-			c.close()
-	
+			storeClose()
+
+
+pinUp=15
+pinDown=13
+
+def storeClose():                                                                                          
+	global pinDown
+        print time.strftime("%Y-%m-%d %H:%M : ") + "STORE CLOSE"                                           
+        GPIO.output(pinDown, GPIO.HIGH)                                                                                 
+        time.sleep(0.1)                                                                                    
+        GPIO.output(pinDown, GPIO.LOW)                                                                         
+                                                                                                          
+def storeOpen():      
+	global pinUp                                                                                             
+        print time.strftime("%Y-%m-%d %H:%M : ") + "STORE OPEN"                     
+        GPIO.output(pinUP, GPIO.HIGH)                                                                         
+        time.sleep(0.1)                                                                                    
+        GPIO.output(pinUP, GPIO.LOW)                                                                                  
+                                                                                                          
+GPIO.setmode(GPIO.BOARD)                                                                                           
+GPIO.setup(pinDown, GPIO.OUT)                                                                                  
+GPIO.setup(pinUP, GPIO.OUT)                                                                                   
+GPIO.output(pinUP, GPIO.LOW)                                                                                  
+GPIO.output(pinDown, GPIO.LOW)  
 
 radio = RFM69.RFM69(RF69_868MHZ, 1, 100, False)
 radio.setHighPower(False)
@@ -101,17 +117,18 @@ while True:
 				body = buffer.getvalue()
 				data = json.loads(body)
 				if ( len(data["action"])>0):
+					print data["action"][0]["action"]	
+					if(data["action"][0]["action"]=="STORE_OPEN|"):
+						storeOpen()
+					if(data["action"][0]["action"]=="STORE_CLOSE|"): 
+						storeClose()
 					identifiant = data["action"][0]["id"]
-					textToSend = "A|" + data["action"][0]["action"]
-					print "Send Action"
-					if (radio.sendWithRetry(5, textToSend, 3, 40)):
-						print "Ok"
-						c = pycurl.Curl()
-						c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/action/process')
-						c.setopt(pycurl.POST, 1)
-						c.setopt(pycurl.POSTFIELDS, '{"id":"' + str(identifiant) + '"}')
-						c.perform()
-						c.close()
+					c = pycurl.Curl()
+					c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/action/process')
+					c.setopt(pycurl.POST, 1)
+					c.setopt(pycurl.POSTFIELDS, '{"id":"' + str(identifiant) + '"}')
+					c.perform()
+					c.close()
 			time.sleep(.005)
 		message= "".join([chr(letter) for letter in radio.DATA])
 		sender = radio.SENDERID
