@@ -44,9 +44,6 @@ unsigned char encoder_B;
 unsigned char encoder_A_prev = 0;
 unsigned long currentTime;
 unsigned long buttonLoopTime;
-unsigned long sleepTime;
-unsigned long refreshScreenTime;
-unsigned long nbMessage=0;
 
 const int buttonpin = 5;
 int buttonreading;           // the current reading from the input pin
@@ -58,9 +55,6 @@ U8GLIB_SSD1306_128X64 u8g(U8G_I2C_OPT_NO_ACK);	// Display which does not send AC
 
 String action = "";
 String action_arg = "";
-/* ------------------------------------------------------ */
-
-void(* resetFunc) (void) = 0;//declare reset function at address 0
 
 void setup() {
   delay(100);
@@ -95,84 +89,13 @@ void setup() {
   pinMode(pin_B, INPUT);
   currentTime = millis();
   buttonLoopTime = currentTime;
-  sleepTime = currentTime;
-  refreshScreenTime = currentTime;
   Blink(LED, 500);
 }
-void loop() {
-  if (radio.receiveDone())
-  {
-    nbMessage=nbMessage+1;
-    for (byte i = 0; i < radio.DATALEN; i++)
-      buff[i] = (char)radio.DATA[i];
-    buff[radio.DATALEN] = '\0';
-    if (radio.DATALEN > 0) {
-      DEBUGln(buff);
-      DEBUG("From: ");
-      DEBUG(radio.SENDERID);
-      DEBUG(" -> ");
-      DEBUG(radio.TARGETID);
-      DEBUG(" : ");
-      DEBUGln(rooms[radio.SENDERID]);
-      String msg = String(buff);
-      if ((radio.TARGETID == NODEID) && radio.ACKRequested())
-      {
-        radio.sendACK();
-      }
-      if (msg.indexOf('|') != -1) {
-        String msgtype = msg.substring(0, 1);
-        if (msgtype == "A") {
-          String fullaction = msg.substring(msg.indexOf('|') + 1);
-          DEBUGln(fullaction);
-          action = fullaction.substring(0, fullaction.indexOf('|'));
-          action_arg = fullaction.substring(fullaction.indexOf('|') + 1);
-          action_arg = fullaction.substring(fullaction.indexOf('|') + 1);
-          DEBUGln(action);
-          if (action == "STORE_OPEN")
-            storeOpen();
-          if (action == "STORE_CLOSE")
-            storeClose();
-          if (action == "HEATER_ON")
-            heaterOn();
-          if (action == "HEATER_OFF")
-            heaterOff();
-          if (action == "SET_CIBLE")
-            setCible(action_arg);
-          if (action == "SET_ZONE")
-            setZone(action_arg);
-        }
-        if (msgtype == "T")  {
-          String t = msg.substring(msg.indexOf('|') + 1);
-          t = t.substring(0, t.indexOf('|'));
-          DEBUG(radio.SENDERID);
-          DEBUG(":");
-          DEBUGln(t);
-          rooms_temps[radio.SENDERID] = t.toFloat();
-        }
 
-      }
-    }
-    updateScreen();
-    Blink(LED, 10);
-    sleepTime = millis();
-    
-  }
-  currentTime = millis();
-  if (currentTime >= (buttonLoopTime + 2)) {
-    checkButton();
-    buttonLoopTime = currentTime;
-  }
-  if (currentTime >= (refreshScreenTime + 500)) {
-    updateScreen();
-    refreshScreenTime = currentTime;
-  }
-  if (currentTime >= (sleepTime + 120000)) {
-    DEBUGln("RESET");
-    digitalWrite(LED, HIGH);
-    updateScreen();
-    sleepTime = currentTime;
-  //resetFunc();
-  }
+
+void loop() {
+  handleMessage();
+  checkButton();
   delay(0.1);
 }
 
@@ -187,24 +110,29 @@ void initRadio() {
 }
 
 void checkButton(void) {
-  encoder_A = digitalRead(pin_A);    // Read encoder pins
-  encoder_B = digitalRead(pin_B);
-  if ((!encoder_A) && (encoder_A_prev)) {
-    // A has gone from high to low
-    if (encoder_B) {
-      // B is high so clockwise
-      // increase the brightness, dont go over 255
-      cible += 0.5;
-      updateScreen();
+  currentTime = millis();
+  if (currentTime >= (buttonLoopTime + 2)) {
+    encoder_A = digitalRead(pin_A);    // Read encoder pins
+    encoder_B = digitalRead(pin_B);
+    if ((!encoder_A) && (encoder_A_prev)) {
+      // A has gone from high to low
+      if (encoder_B) {
+        // B is high so clockwise
+        // increase the brightness, dont go over 255
+        cible += 0.5;
+        checkTemp();
+        updateScreen();
 
+      }
+      else {
+        // B is low so counter-clockwise
+        // decrease the brightness, dont go below 0
+        cible -= 0.5;
+        checkTemp();
+        updateScreen();
+      }
+      buttonLoopTime = currentTime;
     }
-    else {
-      // B is low so counter-clockwise
-      // decrease the brightness, dont go below 0
-      cible -= 0.5;
-      updateScreen();
-    }
-
   }
   encoder_A_prev = encoder_A;     // Store value of A for next time
 
@@ -235,14 +163,13 @@ void updateScreen() {
   sprintf(ligne1, "Cible: %s", buffcible);
   sprintf(ligne2, "Zone: %s", rooms[zone]);
   sprintf(ligne3, "Temp: %s", (rooms_temps[zone] == 0) ? "Inconnue" : buffTemp);
-//  sprintf(ligne4, "Status: %s", currentStatus ? "ON" : "OFF");
-sprintf(ligne4, "ct: %lu %d %d", nbMessage, radio._mode,radio.DATALEN);
+  sprintf(ligne4, "Status: %s", currentStatus ? "ON" : "OFF");
+  //sprintf(ligne4, "ct: %lu %d %d", nbMessage, radio._mode, radio.DATALEN);
 
   u8g.firstPage();
   do {
     draw();
   } while ( u8g.nextPage() );
-
 }
 
 void Blink(byte PIN, int DELAY_MS)
@@ -250,6 +177,70 @@ void Blink(byte PIN, int DELAY_MS)
   digitalWrite(PIN, HIGH);
   delay(DELAY_MS);
   digitalWrite(PIN, LOW);
+}
+
+void checkTemp()
+{
+  if ((rooms_temps[zone] < cible) && (rooms_temps[zone] != 0)) {
+    heaterOn();
+  } else {
+    heaterOff();
+  }
+}
+
+void handleMessage()
+{
+  if (radio.receiveDone())
+  {
+    for (byte i = 0; i < radio.DATALEN; i++)
+      buff[i] = (char)radio.DATA[i];
+    buff[radio.DATALEN] = '\0';
+    if (radio.DATALEN > 0) {
+      DEBUGln(buff);
+      DEBUG("From: ");
+      DEBUG(radio.SENDERID);
+      DEBUG(" -> ");
+      DEBUG(radio.TARGETID);
+      DEBUG(" : ");
+      DEBUGln(rooms[radio.SENDERID]);
+      String msg = String(buff);
+      if ((radio.TARGETID == NODEID) && radio.ACKRequested())
+      {
+        radio.sendACK();
+      }
+      if (msg.indexOf('|') != -1) {
+        String msgtype = msg.substring(0, 1);
+        if (msgtype == "A") {
+          String fullaction = msg.substring(msg.indexOf('|') + 1);
+          DEBUGln(fullaction);
+          action = fullaction.substring(0, fullaction.indexOf('|'));
+          action_arg = fullaction.substring(fullaction.indexOf('|') + 1);
+          action_arg = fullaction.substring(fullaction.indexOf('|') + 1);
+          DEBUGln(action);
+          if (action == "HEATER_ON")
+            heaterOn();
+          if (action == "HEATER_OFF")
+            heaterOff();
+          if (action == "SET_CIBLE")
+            setCible(action_arg);
+          if (action == "SET_ZONE")
+            setZone(action_arg);
+        }
+        if (msgtype == "T")  {
+          String t = msg.substring(msg.indexOf('|') + 1);
+          t = t.substring(0, t.indexOf('|'));
+          DEBUG(radio.SENDERID);
+          DEBUG(":");
+          DEBUGln(t);
+          rooms_temps[radio.SENDERID] = t.toFloat();
+        }
+
+      }
+    }
+    updateScreen();
+    checkTemp();
+    Blink(LED, 10);
+  }
 }
 
 void rotateZone() {
@@ -262,6 +253,7 @@ void rotateZone() {
     if (zone > 6) zone = 1;
   }
   DEBUGln(zone);
+  checkTemp();
   updateScreen();
 }
 
@@ -285,6 +277,7 @@ void setCible(String str_cible) {
   cible = str_cible.toFloat();
   DEBUG("CIBLE: ");
   DEBUGln(cible);
+  checkTemp();
   updateScreen();
 }
 
@@ -292,7 +285,6 @@ void setZone(String str_cible) {
   zone = str_cible.toInt();
   DEBUG("Zone: ");
   DEBUGln(zone);
+  checkTemp();
   updateScreen();
 }
-
-
