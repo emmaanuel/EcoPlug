@@ -14,13 +14,12 @@ const byte nb_frames = 13; // Numbers of frames per command
 #define SIG_HIGH() digitalWrite(TX_433_PIN, HIGH)
 #define SIG_LOW() digitalWrite(TX_433_PIN, LOW)
 
-/** "Rolling code" (normally avoid frame spoofing) */
+/* "Rolling code" */
 byte RF_ROLLING_CODE[] = {
   0x98, 0xDA, 0x1E, 0xE6, 0x67
 };
 
-
-/** Transmission channels and status enumeration */
+/* Transmission channels and status enumeration */
 enum {
   OFF, ON,
   CH_1 = 8, CH_2 = 4, CH_3 = 2, CH_4 = 1, CH_5 = 3, CH_ALL = 0,
@@ -33,8 +32,8 @@ byte RF_KEY[] = RF433KEY;
 /** Frame-data buffer (key ID + status flag + rolling code + token */
 byte RF_BUFFER[7];
 
- int up;
- int down;
+int up;
+int down;
 
 void setup() {
   set_key(RF_BUFFER, RF_KEY, true);
