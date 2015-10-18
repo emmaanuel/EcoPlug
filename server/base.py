@@ -50,27 +50,35 @@ def processMsg(msg, sender, rssi):
 def processLight(light):
 	global lastDayStatus,currentDayStatus,newDayStatus
 	if (int(light) >30):
-		if (lastDayStatus == "DAY"):
+		if ((lastDayStatus == "DAY")&(newDayStatus!="DAY")):
 			newDayStatus = "DAY"
 			print time.strftime("%Y-%m-%d %H:%M : ") + "newDayStatus change : " + newDayStatus
-		else:
+		elif (lastDayStatus != "DAY"):
 			lastDayStatus = "DAY"
 			print time.strftime("%Y-%m-%d %H:%M : ") +"lastDayStatus change : " + lastDayStatus
 	elif (int(light) <30):
-		if (lastDayStatus == "NIGHT"):
+		if ((lastDayStatus == "NIGHT")&(newDayStatus!="NIGHT")):
 			newDayStatus = "NIGHT"
 			print time.strftime("%Y-%m-%d %H:%M : ") +"newDayStatus change : " + newDayStatus
-		else:
+		elif (lastDayStatus != "NIGHT"):
 			lastDayStatus = "NIGHT"
 			print time.strftime("%Y-%m-%d %H:%M : ") +"lastDayStatus change : " + lastDayStatus
 	if (newDayStatus != currentDayStatus):
 		print time.strftime("%Y-%m-%d %H:%M : ") + "DAY_STATUS change : " + newDayStatus
 		currentDayStatus = newDayStatus
+		ection = ""
 		if (newDayStatus == "DAY"):
 			storeOpen()
+			action = "STORE_OPEN_AUTO"
 		else:
 			storeClose()
-
+			action = "STORE_CLOSE_AUTO"
+		c = pycurl.Curl()
+		c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/action/log')
+		c.setopt(pycurl.POST, 1)
+		c.setopt(pycurl.POSTFIELDS, '{"a":"'+action+'"}')
+		c.perform()
+		c.close()
 
 pinUp=15
 pinDown=13
@@ -97,7 +105,7 @@ GPIO.output(pinDown, GPIO.LOW)
 
 radio = RFM69.RFM69(RF69_868MHZ, 1, 100, False)
 radio.setHighPower(False)
-radio.encrypt("XXXXXXXXXXX")
+radio.encrypt("XXXXXXXXXXXXXXXX")
 print "reading"
 lastDayStatus = ""
 currentDayStatus = ""
