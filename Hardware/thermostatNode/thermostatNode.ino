@@ -31,6 +31,7 @@ char ligne2[20] = "Zone: ?";
 char ligne3[20] = "Temp: 22.50";
 char ligne4[20] = "Status: ON";
 float cible = 20;
+float delta = 0.3;
 int zone = 3;
 boolean currentStatus = false;
 char rooms[][15] = {"?", "Raspberry", "Juliette", "Salon", "Jardin", "Thermostat", "Garage"};
@@ -91,7 +92,6 @@ void setup() {
   buttonLoopTime = currentTime;
   Blink(LED, 500);
 }
-
 
 void loop() {
   handleMessage();
@@ -181,9 +181,9 @@ void Blink(byte PIN, int DELAY_MS)
 
 void checkTemp()
 {
-  if ((rooms_temps[zone] < cible) && (rooms_temps[zone] != 0)) {
+  if ((rooms_temps[zone] < (cible-delta)) && (rooms_temps[zone] != 0)) {
     heaterOn();
-  } else {
+  } else if (rooms_temps[zone] > (cible+delta)) {
     heaterOff();
   }
 }
@@ -256,8 +256,6 @@ void rotateZone() {
   checkTemp();
   updateScreen();
 }
-
-
 
 void heaterOn() {
   DEBUGln("HEATER ON");

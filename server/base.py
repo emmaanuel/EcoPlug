@@ -50,52 +50,42 @@ def processMsg(msg, sender, rssi):
 def processLight(light):
 	global lastDayStatus,currentDayStatus,newDayStatus
 	if (int(light) >30):
-		if ((lastDayStatus == "DAY")&(newDayStatus!="DAY")):
-			newDayStatus = "DAY"
-			print time.strftime("%Y-%m-%d %H:%M : ") + "newDayStatus change : " + newDayStatus
-		elif (lastDayStatus != "DAY"):
+		if (lastDayStatus != "DAY"):
 			lastDayStatus = "DAY"
 			print time.strftime("%Y-%m-%d %H:%M : ") +"lastDayStatus change : " + lastDayStatus
-	elif (int(light) <30):
-		if ((lastDayStatus == "NIGHT")&(newDayStatus!="NIGHT")):
-			newDayStatus = "NIGHT"
-			print time.strftime("%Y-%m-%d %H:%M : ") +"newDayStatus change : " + newDayStatus
-		elif (lastDayStatus != "NIGHT"):
+			storeOpen() 
+	elif (int(light) <=30):
+		if (lastDayStatus != "NIGHT"):
 			lastDayStatus = "NIGHT"
 			print time.strftime("%Y-%m-%d %H:%M : ") +"lastDayStatus change : " + lastDayStatus
-	if (newDayStatus != currentDayStatus):
-		print time.strftime("%Y-%m-%d %H:%M : ") + "DAY_STATUS change : " + newDayStatus
-		currentDayStatus = newDayStatus
-		ection = ""
-		if (newDayStatus == "DAY"):
-			storeOpen()
-			action = "STORE_OPEN_AUTO"
-		else:
 			storeClose()
-			action = "STORE_CLOSE_AUTO"
-		c = pycurl.Curl()
-		c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/action/log')
-		c.setopt(pycurl.POST, 1)
-		c.setopt(pycurl.POSTFIELDS, '{"a":"'+action+'"}')
-		c.perform()
-		c.close()
 
 pinUp=15
 pinDown=13
+
+def sendAction(action):
+	c = pycurl.Curl()                                                                                  
+	c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/action/log')                                   
+	c.setopt(pycurl.POST, 1)                                                                           
+	c.setopt(pycurl.POSTFIELDS, '{"a":"'+action+'"}')                                                  
+	c.perform()                                                                                        
+	c.close() 	
 
 def storeClose():                                                                                          
 	global pinDown
         print time.strftime("%Y-%m-%d %H:%M : ") + "STORE CLOSE"                                           
         GPIO.output(pinDown, GPIO.HIGH)                                                                                 
         time.sleep(0.1)                                                                                    
-        GPIO.output(pinDown, GPIO.LOW)                                                                         
+        GPIO.output(pinDown, GPIO.LOW)  
+	sendAction("STORE_CLOSE_AUTO");                                                                       
                                                                                                           
 def storeOpen():      
 	global pinUp                                                                                             
         print time.strftime("%Y-%m-%d %H:%M : ") + "STORE OPEN"                     
         GPIO.output(pinUp, GPIO.HIGH)                                                                         
         time.sleep(0.1)                                                                                    
-        GPIO.output(pinUp, GPIO.LOW)                                                                                  
+        GPIO.output(pinUp, GPIO.LOW) 
+	sendAction("STORE_OPEN_AUTO");                                                                                   
                                                                                                           
 GPIO.setmode(GPIO.BOARD)                                                                                           
 GPIO.setup(pinDown, GPIO.OUT)                                                                                  
