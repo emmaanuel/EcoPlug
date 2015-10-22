@@ -120,13 +120,6 @@ while True:
 						storeOpen()
 					if(data["action"][0]["action"]=="STORE_CLOSE|"): 
 						storeClose()
-					identifiant = data["action"][0]["id"]
-					c = pycurl.Curl()
-					c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/action/process')
-					c.setopt(pycurl.POST, 1)
-					c.setopt(pycurl.POSTFIELDS, '{"id":"' + str(identifiant) + '"}')
-					c.perform()
-					c.close()
 			time.sleep(.005)
 		message= "".join([chr(letter) for letter in radio.DATA])
 		sender = radio.SENDERID
