@@ -53,17 +53,20 @@ def processLight(light):
 		if (lastDayStatus != "DAY"):
 			lastDayStatus = "DAY"
 			print time.strftime("%Y-%m-%d %H:%M : ") +"lastDayStatus change : " + lastDayStatus
+			logAction("STORE_OPEN_AUTO");
 			storeOpen() 
+			 
 	elif (int(light) <=30):
 		if (lastDayStatus != "NIGHT"):
 			lastDayStatus = "NIGHT"
 			print time.strftime("%Y-%m-%d %H:%M : ") +"lastDayStatus change : " + lastDayStatus
+			logAction("STORE_CLOSE_AUTO"); 
 			storeClose()
 
 pinUp=15
 pinDown=13
 
-def sendAction(action):
+def logAction(action):
 	c = pycurl.Curl()                                                                                  
 	c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/action/log')                                   
 	c.setopt(pycurl.POST, 1)                                                                           
@@ -71,21 +74,28 @@ def sendAction(action):
 	c.perform()                                                                                        
 	c.close() 	
 
-def storeClose():                                                                                          
+def processAction(actionid):
+	c = pycurl.Curl()
+ 	c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/action/process')
+ 	c.setopt(pycurl.POST, 1)
+ 	c.setopt(pycurl.POSTFIELDS, '{"id":"' + str(actionid) + '"}')
+ 	c.perform()
+ 	c.close()	
+ 	print "Action " + actionid + " processed"
+
+def storeClose(auto=True):                                                                                          
 	global pinDown
-        print time.strftime("%Y-%m-%d %H:%M : ") + "STORE CLOSE"                                           
-        GPIO.output(pinDown, GPIO.HIGH)                                                                                 
-        time.sleep(0.1)                                                                                    
-        GPIO.output(pinDown, GPIO.LOW)  
-	sendAction("STORE_CLOSE_AUTO");                                                                       
+	print time.strftime("%Y-%m-%d %H:%M : ") + "STORE CLOSE"                                           
+	GPIO.output(pinDown, GPIO.HIGH)                                                                                 
+	time.sleep(0.1)                                                                                    
+	GPIO.output(pinDown, GPIO.LOW)                                                                        
                                                                                                           
-def storeOpen():      
+def storeOpen(auto=True):      
 	global pinUp                                                                                             
-        print time.strftime("%Y-%m-%d %H:%M : ") + "STORE OPEN"                     
-        GPIO.output(pinUp, GPIO.HIGH)                                                                         
-        time.sleep(0.1)                                                                                    
-        GPIO.output(pinUp, GPIO.LOW) 
-	sendAction("STORE_OPEN_AUTO");                                                                                   
+	print time.strftime("%Y-%m-%d %H:%M : ") + "STORE OPEN"                     
+	GPIO.output(pinUp, GPIO.HIGH)                                                                         
+	time.sleep(0.1)                                                                                    
+	GPIO.output(pinUp, GPIO.LOW)
                                                                                                           
 GPIO.setmode(GPIO.BOARD)                                                                                           
 GPIO.setup(pinDown, GPIO.OUT)                                                                                  
@@ -115,11 +125,15 @@ while True:
 				body = buffer.getvalue()
 				data = json.loads(body)
 				if ( len(data["action"])>0):
-					print data["action"][0]["action"]	
+					print data["action"][0]["action"]
+					identifiant = data["action"][0]["id"]
+ 					
 					if(data["action"][0]["action"]=="STORE_OPEN|"):
-						storeOpen()
+						storeOpen(False)
+						processAction(identifiant)
 					if(data["action"][0]["action"]=="STORE_CLOSE|"): 
-						storeClose()
+						storeClose(False)
+						processAction(identifiant)
 			time.sleep(.005)
 		message= "".join([chr(letter) for letter in radio.DATA])
 		sender = radio.SENDERID
