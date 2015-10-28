@@ -10,7 +10,7 @@
 //#define IS_RFM69HW    //uncomment only for RFM69HW! Leave out if you have RFM69W!
 #define LED           9 // Moteinos have LEDs on D9
 #define SERIAL_BAUD   57600
-#define RELAY 4
+#define RELAY 8
 
 //#define SERIAL_EN                //comment out if you don't want any serial output
 
