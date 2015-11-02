@@ -102,7 +102,7 @@ void loop() {
 
   motionDetected = false;
   // On attend 10 min
-  for (byte i = 0; (i < 40) && (!motionDetected); i++)
+  for (byte i = 0; (i < 20) && (!motionDetected); i++)
     LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
 }
 

@@ -10,7 +10,7 @@ ecoplug.bootloader.tool=arduino:avrdude
 ecoplug.bootloader.unlock_bits=0x3F
 ecoplug.bootloader.lock_bits=0x0F
 ecoplug.bootloader.low_fuses=0xe2
-ecoplug.bootloader.high_fuses=0xD9
+ecoplug.bootloader.high_fuses=0xDa
 ecoplug.bootloader.extended_fuses=0x07
 ecoplug.bootloader.file=atmega/ATmegaBOOT_168_atmega328_pro_8MHz.hex
 
