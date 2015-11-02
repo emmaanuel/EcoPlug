@@ -40,10 +40,20 @@ def processMsg(msg, sender, rssi):
 			event = msg.split('|')[1]
 			print time.strftime("%Y-%m-%d %H:%M : ") + "EVENT: " + event
 			if (event == "MOTION"):
+				print time.strftime("%Y-%m-%d %H:%M : ") +"MOTION Received  " 
 				c = pycurl.Curl()
 				c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/motion')
 				c.setopt(pycurl.POST, 1)
 				c.setopt(pycurl.POSTFIELDS, '{"n":"'+str(sender)+'","r":"'+str(rssi)+'"}')
+				c.perform()
+				c.close()
+			if (event.startswith("HEATER")):
+				print time.strftime("%Y-%m-%d %H:%M : ") + event + " Received " 
+				c = pycurl.Curl()
+				c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/heater')
+				c.setopt(pycurl.POST, 1)
+				heaterStatus = event.startswith("ON",6)
+				c.setopt(pycurl.POSTFIELDS, '{"n":"'+str(sender)+'","r":"'+str(rssi)+'","s":"'+str(heaterStatus)+'"}')
 				c.perform()
 				c.close()
 

@@ -11,8 +11,9 @@
 #define LED           9 // Moteinos have LEDs on D9
 #define SERIAL_BAUD   57600
 #define RELAY 8
+#define GATEWAYID     NODE_BASE
 
-//#define SERIAL_EN                //comment out if you don't want any serial output
+#define SERIAL_EN                //comment out if you don't want any serial output
 
 #ifdef SERIAL_EN
 #define DEBUG(input)   {Serial.print(input);}
@@ -29,13 +30,13 @@ char buff[50];
 char ligne1[20] = "Cible: ?";
 char ligne2[20] = "Zone: ?";
 char ligne3[20] = "Temp: 22.50";
-char ligne4[20] = "Status: ON";
+char ligne4[20] = "Status: ?";
 float cible = 20;
 float delta = 0.3;
 int zone = 3;
 boolean currentStatus = false;
-char rooms[][15] = {"?", "Raspberry", "Juliette", "Salon", "Jardin", "Thermostat", "Garage"};
-float rooms_temps[7] = {0, 0, 0, 0, 0, 0, 0};
+char rooms[][15] = {"?", "Base", "Juliette", "Salon", "Jardin", "Thermostat", "Garage", "Grenier"};
+float rooms_temps[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
 const int pin_A = 6;
 const int pin_B = 7;
@@ -181,9 +182,9 @@ void Blink(byte PIN, int DELAY_MS)
 
 void checkTemp()
 {
-  if ((rooms_temps[zone] < (cible-delta)) && (rooms_temps[zone] != 0)) {
+  if ((rooms_temps[zone] < (cible - delta)) && (rooms_temps[zone] != 0) && !currentStatus) {
     heaterOn();
-  } else if (rooms_temps[zone] > (cible+delta)) {
+  } else if ((rooms_temps[zone] > (cible + delta)) && (currentStatus)) {
     heaterOff();
   }
 }
@@ -257,11 +258,26 @@ void rotateZone() {
   updateScreen();
 }
 
+void sendEvent(char *msg){
+  sprintf(buff, "E|%s", msg);
+  byte sendSize = strlen(buff);
+  DEBUG("Sending[");
+  DEBUG(sendSize);
+  DEBUG("]: ");
+  DEBUG(buff);
+  if (radio.sendWithRetry(GATEWAYID, buff, sendSize, RFM69Retry, RFM69RetryTimeout)) {
+    DEBUGln(" ok!");
+  } else {
+    DEBUGln(" nothing...");
+  }
+}
+
 void heaterOn() {
   DEBUGln("HEATER ON");
   currentStatus = true;
   updateScreen();
   digitalWrite(RELAY, HIGH);
+  sendEvent("HEATER_ON");
 }
 
 void heaterOff() {
@@ -269,6 +285,7 @@ void heaterOff() {
   currentStatus = false;
   updateScreen();
   digitalWrite(RELAY, LOW);
+  sendEvent("HEATER_OFF");
 }
 
 void setCible(String str_cible) {
