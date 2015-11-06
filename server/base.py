@@ -9,8 +9,31 @@ import json
 from io import BytesIO
 import sys
 import RPi.GPIO as GPIO
+import requests
+
+n=0
+tmpdata=[]
+rooms=["","","juliette","salon","jardin","","garage","grenier"]
+
+def pushOVH(metric, value):
+	global n, tmpdata
+	token_id = 'xxxxxx'                                                                                                        
+	token_key = 'xxxxxx'                                                                                            
+	end_point = 'https://opentsdb.iot.runabove.io/api/put'
+	tmpdata.append({'metric': metric,'timestamp': long(time.time()),'value': value,'tags': {'source': 'ecoplug'}})
+	n = n + 1
+	if (n>20):
+		try:                                                                                                    
+			response = requests.post(end_point, data=json.dumps(tmpdata), auth=(token_id, token_key))          
+			response.raise_for_status()                                                                     
+			print('Send successful\nResponse code from server: {}'.format(response.status_code))          
+		except requests.exceptions.HTTPError as e:                                                                        
+			print('HTTP code is {} and reason is {}'.format(e.response.status_code, e.response.reason)) 
+		n=0
+		tmpdata=[]
 
 def processMsg(msg, sender, rssi):
+	global rooms
 	if (msg.find('|')>-1):
 		msgtype = msg.split('|')[0]
 		if (msgtype == "T"):
@@ -23,8 +46,12 @@ def processMsg(msg, sender, rssi):
 			c.setopt(pycurl.POSTFIELDS, '{"n":"'+str(sender)+'","t":"'+temp+'","h":"'+rh+'","l":"'+l+'","r":"'+str(rssi)+'"}')
 			c.perform()
 			c.close() 
+			pushOVH('home.temp.' + rooms[sender],float(temp))
+			if (rh != ""): 
+				pushOVH('home.rh.' + rooms[sender],float(rh)) 
 			if (l != "" ):
 				processLight(l)
+				pushOVH('home.light.' + rooms[sender],int(l)) 
 		if (msgtype == "P"):
 			power = msg.split('|')[1]
 			tf = msg.split('|')[2]
@@ -36,6 +63,9 @@ def processMsg(msg, sender, rssi):
 			c.setopt(pycurl.POSTFIELDS, '{"pw":"'+power+'","tf":"'+tf+'","hc":"'+hc+'","hp":"'+hp+'"}')
 			c.perform()
 			c.close()
+			pushOVH('home.edf.power',int(power))
+			pushOVH('home.edf.hc',int(hc))
+			pushOVH('home.edf.hp',int(hp))
 		if (msgtype == "E"):
 			event = msg.split('|')[1]
 			print time.strftime("%Y-%m-%d %H:%M : ") + "EVENT: " + event
@@ -48,12 +78,11 @@ def processMsg(msg, sender, rssi):
 				c.perform()
 				c.close()
 			if (event.startswith("HEATER")):
-				print time.strftime("%Y-%m-%d %H:%M : ") + event + " Received " 
 				c = pycurl.Curl()
 				c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/heater')
 				c.setopt(pycurl.POST, 1)
-				heaterStatus = event.startswith("ON",6)
-				c.setopt(pycurl.POSTFIELDS, '{"n":"'+str(sender)+'","r":"'+str(rssi)+'","s":"'+str(heaterStatus)+'"}')
+				heaterStatus = event.startswith("ON",7)
+				c.setopt(pycurl.POSTFIELDS, '{"n":"'+str(sender)+'","r":"'+str(rssi)+'","s":"' + str(heaterStatus) + '"}')
 				c.perform()
 				c.close()
 
@@ -75,6 +104,7 @@ def processLight(light):
 
 pinUp=15
 pinDown=13
+
 
 def logAction(action):
 	c = pycurl.Curl()                                                                                  
@@ -115,7 +145,7 @@ GPIO.output(pinDown, GPIO.LOW)
 
 radio = RFM69.RFM69(RF69_868MHZ, 1, 100, False)
 radio.setHighPower(False)
-radio.encrypt("XXXXXXXXXXXXXXXX")
+radio.encrypt("xxxxxx")
 print "reading"
 lastDayStatus = ""
 currentDayStatus = ""
