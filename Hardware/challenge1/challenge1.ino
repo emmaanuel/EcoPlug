@@ -1,23 +1,7 @@
-
-#include <SPI.h>
-#include <LowPower.h> //get library from: https://github.com/lowpowerlab/lowpower
-#include <ECOCommons.h>
 #include "U8glib.h"
 
 
 #define LED           9 // Moteinos have LEDs on D9
-#define SERIAL_BAUD   57600
-
-
-#define SERIAL_EN                //comment out if you don't want any serial output
-
-#ifdef SERIAL_EN
-#define DEBUG(input)   {Serial.print(input);}
-#define DEBUGln(input) {Serial.println(input);}
-#else
-#define DEBUG(input);
-#define DEBUGln(input);
-#endif
 
 
 char ligne1[20] = "";
@@ -25,8 +9,8 @@ char ligne2[20] = "";
 char ligne3[20] = "";
 char ligne4[20] = "";
 
-const int pin_A = 6;
-const int pin_B = 7;
+const int pin_A = 3;
+const int pin_B = 4;
 int n = 0;
 unsigned char encoder_A;
 unsigned char encoder_B;
@@ -79,7 +63,6 @@ void setup() {
   sleepTime = currentTime;
   refreshScreenTime = currentTime;
   Blink(LED, 500);
-  DEBUGln("GO");
 }
 
 void loop() {
@@ -88,25 +71,20 @@ void loop() {
   delay(0.3);
 }
 
+// Verification des actions sur le boutton
 void checkButton(void) {
   encoder_A = digitalRead(pin_A);    // Read encoder pins
   encoder_B = digitalRead(pin_B);
   if ((!encoder_A) && (encoder_A_prev)) {
     // A has gone from high to low
     if (encoder_B) {
-      DEBUG("Level:");
-      DEBUGln(level);
-      DEBUG(" n_inputcode[level]:");
-      DEBUGln(n_inputcode[level])
       // B is high so clockwise
-      // increase the brightness, dont go over 255
       inputcode[level][n_inputcode[level]] += 1;
       if (inputcode[level][n_inputcode[level]] > 99) inputcode[level][n_inputcode[level]] = 0;
       updateScreen();
     }
     else {
       // B is low so counter-clockwise
-      // decrease the brightness, dont go below 0
       inputcode[level][n_inputcode[level]] -= 1;
       if (inputcode[level][n_inputcode[level]] > 99) inputcode[level][n_inputcode[level]] = 99;
       updateScreen();
@@ -114,7 +92,7 @@ void checkButton(void) {
   }
   encoder_A_prev = encoder_A;     // Store value of A for next time
 
-  //READ SWITCH BUTTON
+  //Lecture du boutton push
   buttonreading = digitalRead(buttonpin);
   if (buttonreading == HIGH && buttonprevious == LOW && millis() - buttontime > buttondebounce) {
     n_inputcode[level] += 1;
@@ -128,8 +106,8 @@ void checkButton(void) {
   buttonprevious = buttonreading;
 }
 
+// Dessine l'écran
 void draw(void) {
-  // graphic commands to redraw the complete screen should be placed here
   u8g.setFont(u8g_font_unifont);
   u8g.drawStr( 0, 15, ligne1);
   u8g.drawStr( 0, 30, ligne2);
@@ -137,18 +115,20 @@ void draw(void) {
   u8g.drawStr( 0, 60, ligne4);
 }
 
+
+// Actualise le texte à afficher
 void updateScreen() {
   if (level == 0) {
     sprintf(ligne1, "     code1 ");
-    sprintf(ligne2, "  %d %d %d %d", inputcode[0][0], inputcode[0][1], inputcode[0][2], inputcode[0][3]);
+    sprintf(ligne2, "  %02d %02d %02d %02d", inputcode[0][0], inputcode[0][1], inputcode[0][2], inputcode[0][3]);
     sprintf(ligne3, "");
     sprintf(ligne4, "");
   } else if (level == 1) {
     sprintf(ligne1, "     code1");
-    sprintf(ligne2, "  %d %d %d %d OK", inputcode[0][0], inputcode[0][1], inputcode[0][2], inputcode[0][3]);
+    sprintf(ligne2, "  %02d %02d %02d %02d OK", inputcode[0][0], inputcode[0][1], inputcode[0][2], inputcode[0][3]);
     sprintf(ligne3, "     code2");
-    sprintf(ligne4, "  %d %d %d %d", inputcode[1][0], inputcode[1][1], inputcode[1][2], inputcode[1][3]);
-  } else if (level == 2){
+    sprintf(ligne4, "  %02d %02d %02d %02d", inputcode[1][0], inputcode[1][1], inputcode[1][2], inputcode[1][3]);
+  } else if (level > 1) {
     sprintf(ligne1, "Bravo champion");
     sprintf(ligne2, "//GEB/public/");
     sprintf(ligne3, "/emmanuel_cor");
@@ -161,6 +141,7 @@ void updateScreen() {
 
 }
 
+// Verifie si le resultat est correct
 void checkresult() {
   boolean r = true;
   if (level == 0) {
@@ -168,25 +149,22 @@ void checkresult() {
       if (inputcode[level][i] != code[level][i])
         r = false;
     }
-  } else if (level == 1){
+  } else if (level == 1) {
     for (int i = 0; i < 4; i++) {
-      if (encrypt(inputcode[level][i],level,i) != code[level][i])
+      if (encrypt(inputcode[level][i], level, i) != code[level][i])
         r = false;
     }
   }
-  if (r)
+  if (level<2 && r)
     level += 1;
+  else
+    Blink(LED, 100);
 }
 
 uint8_t encrypt (uint8_t v, uint8_t n, uint8_t m) {
-    for (int x = 0; x < m; x++) {                     
-    v += ((v << 4) + n) ^ (v) ^ ((v>> 5) + n);
-    DEBUG("v: ");
-    DEBUGln(v);
-    
-    
-  }        
-  DEBUGln(v);                                      
+  for (int x = 0; x < m; x++) {
+    v += ((v << 4) + n) ^ (v) ^ ((v >> 5) + n);
+  }
   return v;
 }
 
