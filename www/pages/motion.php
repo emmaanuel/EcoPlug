@@ -53,62 +53,22 @@ include '../security/security.php';
             <!-- /.navbar-static-side -->
         </nav>
         <div id="page-wrapper" ng-controller="Dashboard as dash">
-            <div class="row">
-                <div class="col-lg-12">
-                    <h1 class="page-header">Tableau de bord</h1>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-lg-2 col-md-6" ng-repeat="room in rooms">
-                    <div class="panel panel-{{room.color}}">
-                        <div class="panel-heading">
-                            <div class="row">
-                                <div class="col-xs-3">
-                                    <i class="fa {{room.icon}} fa-4x"></i>
-                                    <div ng-cloak>{{room.name}}</div>
-                                </div>
-                                <div class="col-xs-3 text-center">
-                                    <div ng-hide="(room.light == null) || room.light >30 "><i class="fa fa-moon-o fa-3x" alt="{{room.light}}"></i><div>Nuit</div></div>
-                                    <span ng-hide="(room.light == null) || room.light <=30 "><i class="fa fa-sun-o fa-3x" alt="{{room.light}}"></i><div>Jour</div></span>
-                                </div>
-                                <div class="col-xs-6 text-right" ng-cloak>
-                                    <span class="huge"> {{room.temp}}°C</span>
-                                    <div ng-hide="(room.rh == null)">{{room.rh}}% HR</div>
-                                    
-                                </div>
-                            </div>
-                            <div class="row text-center">
-                                {{room.date}}
-                            </div>
-                        </div>
+            
+        <div class="row">
+            <div class="col-lg-12 col-md-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <i class="fa fa-bell fa-fw"></i>Détection de mouvements
+                        <span class="pull-right text-muted small"><input bs-switch type="checkbox" name="motion-checkbox" data-size="mini" ng-model="params_motion"></span>
                     </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-lg-12 col-md-12">
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            EDF
-                        </div>
-                        <div class="panel-body">
-                            <div class="row">
-                                <div class="col-lg-6 col-md-6">
-                                    <div id="gauge"></div>
-                                </div>
-                                <div class="col-lg-6 col-md-6">
-                                 <table class="table">
-                                    <tr>
-                                        <td>Heures Pleines</td>
-                                        <td ng-cloak>{{HP}}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Heures Creuses</td>
-                                        <td ng-cloak>{{HC}}</td>
-                                    </tr>
-                                </table>
+                    <div class="panel-body">
+                        <div class="list-group">
+                            <div  class="list-group-item" ng-repeat="motion in motions">
+                                <i class="fa fa-coffee fa-fw" ng-cloak></i> {{motion.n}}
+                                <span class="pull-right text-muted small" ng-cloak><em>{{motion.d}}</em>
+                                </span>
                             </div>
                         </div>
-                        <div class="verysmall text-center" ng-cloak>{{lastEDFupdate}}</div>
                     </div>
                 </div>
             </div>
@@ -123,10 +83,10 @@ include '../security/security.php';
 <script src="../bower_components/bootstrap/js/bootstrap.min.js"></script>
 <script src="../bower_components/raphael/raphael-min.js"></script>
 <script src="../bower_components/metisMenu/metisMenu.min.js"></script>
-<script src="../bower_components/justgage/justgage-1.1.0.min.js"></script>
+<script src="../bower_components/justgage/justgage.1.0.1.min.js"></script>
 <script src="../bower_components/bootstrap-switch/bootstrap-switch.min.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.11/angular.js"></script>
 <script src="../bower_components/angular-bootstrap-switch/angular-bootstrap-switch.min.js"></script>
-<script src="../js/sb-admin-2.js"></script>
+<script src="../js/motion.js"></script>
 </body>
 </html>

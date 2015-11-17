@@ -53,62 +53,58 @@ include '../security/security.php';
             <!-- /.navbar-static-side -->
         </nav>
         <div id="page-wrapper" ng-controller="Dashboard as dash">
-            <div class="row">
-                <div class="col-lg-12">
-                    <h1 class="page-header">Tableau de bord</h1>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-lg-2 col-md-6" ng-repeat="room in rooms">
-                    <div class="panel panel-{{room.color}}">
-                        <div class="panel-heading">
-                            <div class="row">
-                                <div class="col-xs-3">
-                                    <i class="fa {{room.icon}} fa-4x"></i>
-                                    <div ng-cloak>{{room.name}}</div>
+        <div class="row">
+            <div class="col-lg-12 col-md-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <i class="fa fa-arrows-v fa-fw"></i>Contrôle des volets
+                        <span class="pull-right text-muted small"></span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="row ">
+                            <div class="col-lg-12 col-md-12">
+                                <div class="row">
+                                    <div class="text-center">
+                                        <button type="button" class="btn btn-default" ng-click="voletUp()">
+                                        <i class="fa fa-caret-square-o-up fa-5x"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="col-xs-3 text-center">
-                                    <div ng-hide="(room.light == null) || room.light >30 "><i class="fa fa-moon-o fa-3x" alt="{{room.light}}"></i><div>Nuit</div></div>
-                                    <span ng-hide="(room.light == null) || room.light <=30 "><i class="fa fa-sun-o fa-3x" alt="{{room.light}}"></i><div>Jour</div></span>
+                                <br>
+                                <div class="row">
+                                    <div class="text-center">
+                                        <button type="button" class="btn btn-default" ng-click="voletDown()">
+                                        <i class="fa fa-caret-square-o-down fa-5x"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="col-xs-6 text-right" ng-cloak>
-                                    <span class="huge"> {{room.temp}}°C</span>
-                                    <div ng-hide="(room.rh == null)">{{room.rh}}% HR</div>
-                                    
-                                </div>
-                            </div>
-                            <div class="row text-center">
-                                {{room.date}}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-lg-12 col-md-12">
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            EDF
-                        </div>
-                        <div class="panel-body">
-                            <div class="row">
-                                <div class="col-lg-6 col-md-6">
-                                    <div id="gauge"></div>
-                                </div>
-                                <div class="col-lg-6 col-md-6">
-                                 <table class="table">
-                                    <tr>
-                                        <td>Heures Pleines</td>
-                                        <td ng-cloak>{{HP}}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Heures Creuses</td>
-                                        <td ng-cloak>{{HC}}</td>
-                                    </tr>
-                                </table>
-                            </div>
-                        </div>
-                        <div class="verysmall text-center" ng-cloak>{{lastEDFupdate}}</div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12 col-md-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <i class="fa fa-check-circle-o fa-fw"></i>Historique des Actions
+                    </div>
+                    <div class="panel-body">
+                        <table class="table table-striped">
+                            <tr ng-repeat="action in actions">
+                                <td>{{action.d}}</td>
+                                <td>{{action.a}}</td>
+                                <td>
+                                    <div ng-if="action.p==1">
+                                        <i class="fa fa-check-circle-o fa-2x"></i>
+                                    </div>
+                                    <div ng-if="action.p==0">
+                                        <i class="fa fa-clock-o fa-2x"></i>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -123,10 +119,10 @@ include '../security/security.php';
 <script src="../bower_components/bootstrap/js/bootstrap.min.js"></script>
 <script src="../bower_components/raphael/raphael-min.js"></script>
 <script src="../bower_components/metisMenu/metisMenu.min.js"></script>
-<script src="../bower_components/justgage/justgage-1.1.0.min.js"></script>
+<script src="../bower_components/justgage/justgage.1.0.1.min.js"></script>
 <script src="../bower_components/bootstrap-switch/bootstrap-switch.min.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.11/angular.js"></script>
 <script src="../bower_components/angular-bootstrap-switch/angular-bootstrap-switch.min.js"></script>
-<script src="../js/sb-admin-2.js"></script>
+<script src="../js/volet.js"></script>
 </body>
 </html>
