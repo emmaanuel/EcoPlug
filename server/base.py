@@ -14,6 +14,7 @@ import requests
 n=0
 tmpdata=[]
 rooms=["","","juliette","salon","jardin","","garage","grenier"]
+api_domain = "http://tom.emmaanuel.com"
 
 def pushOVH(metric, value):
 	global n, tmpdata
@@ -41,7 +42,7 @@ def processMsg(msg, sender, rssi):
 			rh = msg.split('|')[2]
 			l = msg.split('|')[3]
 			c = pycurl.Curl()
-			c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/temp')
+			c.setopt(pycurl.URL, api_domain + '/api/temp')
 			c.setopt(pycurl.POST, 1)
 			c.setopt(pycurl.POSTFIELDS, '{"n":"'+str(sender)+'","t":"'+temp+'","h":"'+rh+'","l":"'+l+'","r":"'+str(rssi)+'"}')
 			c.perform()
@@ -49,16 +50,13 @@ def processMsg(msg, sender, rssi):
 			pushOVH('home.temp.' + rooms[sender],float(temp))
 			if (rh != ""): 
 				pushOVH('home.rh.' + rooms[sender],float(rh)) 
-			if (l != "" ):
-				processLight(l)
-				pushOVH('home.light.' + rooms[sender],int(l)) 
 		if (msgtype == "P"):
 			power = msg.split('|')[1]
 			tf = msg.split('|')[2]
 			hc = msg.split('|')[3]
 			hp = msg.split('|')[4]
 			c = pycurl.Curl()
-			c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/edf')
+			c.setopt(pycurl.URL, api_domain + '/api/edf')
 			c.setopt(pycurl.POST, 1)
 			c.setopt(pycurl.POSTFIELDS, '{"pw":"'+power+'","tf":"'+tf+'","hc":"'+hc+'","hp":"'+hp+'"}')
 			c.perform()
@@ -66,83 +64,9 @@ def processMsg(msg, sender, rssi):
 			pushOVH('home.edf.power',int(power))
 			pushOVH('home.edf.hc',int(hc))
 			pushOVH('home.edf.hp',int(hp))
-		if (msgtype == "E"):
-			event = msg.split('|')[1]
-			print time.strftime("%Y-%m-%d %H:%M : ") + "EVENT: " + event
-			if (event == "MOTION"):
-				print time.strftime("%Y-%m-%d %H:%M : ") +"MOTION Received  " 
-				c = pycurl.Curl()
-				c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/motion')
-				c.setopt(pycurl.POST, 1)
-				c.setopt(pycurl.POSTFIELDS, '{"n":"'+str(sender)+'","r":"'+str(rssi)+'"}')
-				c.perform()
-				c.close()
-			if (event.startswith("HEATER")):
-				c = pycurl.Curl()
-				c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/heater')
-				c.setopt(pycurl.POST, 1)
-				heaterStatus = event.startswith("ON",7)
-				c.setopt(pycurl.POSTFIELDS, '{"n":"'+str(sender)+'","r":"'+str(rssi)+'","s":"' + str(heaterStatus) + '"}')
-				c.perform()
-				c.close()
 
-def processLight(light):
-	global lastDayStatus,currentDayStatus,newDayStatus
-	if (int(light) >30):
-		if (lastDayStatus != "DAY"):
-			lastDayStatus = "DAY"
-			print time.strftime("%Y-%m-%d %H:%M : ") +"lastDayStatus change : " + lastDayStatus
-			logAction("STORE_OPEN_AUTO");
-			storeOpen() 
-			 
-	elif (int(light) <=30):
-		if (lastDayStatus != "NIGHT"):
-			lastDayStatus = "NIGHT"
-			print time.strftime("%Y-%m-%d %H:%M : ") +"lastDayStatus change : " + lastDayStatus
-			logAction("STORE_CLOSE_AUTO"); 
-			storeClose()
-
-pinUp=15
-pinDown=13
-
-
-def logAction(action):
-	c = pycurl.Curl()                                                                                  
-	c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/action/log')                                   
-	c.setopt(pycurl.POST, 1)                                                                           
-	c.setopt(pycurl.POSTFIELDS, '{"a":"'+action+'"}')                                                  
-	c.perform()                                                                                        
-	c.close() 	
-
-def processAction(actionid):
-	c = pycurl.Curl()
- 	c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/action/process')
- 	c.setopt(pycurl.POST, 1)
- 	c.setopt(pycurl.POSTFIELDS, '{"id":"' + str(actionid) + '"}')
- 	c.perform()
- 	c.close()	
- 	print "Action " + actionid + " processed"
-
-def storeClose(auto=True):                                                                                          
-	global pinDown
-	print time.strftime("%Y-%m-%d %H:%M : ") + "STORE CLOSE"                                           
-	GPIO.output(pinDown, GPIO.HIGH)                                                                                 
-	time.sleep(0.1)                                                                                    
-	GPIO.output(pinDown, GPIO.LOW)                                                                        
-                                                                                                          
-def storeOpen(auto=True):      
-	global pinUp                                                                                             
-	print time.strftime("%Y-%m-%d %H:%M : ") + "STORE OPEN"                     
-	GPIO.output(pinUp, GPIO.HIGH)                                                                         
-	time.sleep(0.1)                                                                                    
-	GPIO.output(pinUp, GPIO.LOW)
                                                                                                           
 GPIO.setmode(GPIO.BOARD)                                                                                           
-GPIO.setup(pinDown, GPIO.OUT)                                                                                  
-GPIO.setup(pinUp, GPIO.OUT)                                                                                   
-GPIO.output(pinUp, GPIO.LOW)                                                                                  
-GPIO.output(pinDown, GPIO.LOW)  
-
 radio = RFM69.RFM69(RF69_868MHZ, 1, 100, False)
 radio.setHighPower(False)
 radio.encrypt("xxxxxx")
@@ -155,25 +79,6 @@ while True:
 	try:
 		radio.receiveBegin()
 		while not radio.receiveDone():
-			if ((time.time() - referenceTime)>10):
-				referenceTime = time.time()
-				c = pycurl.Curl()
-				c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/action/next')
-				buffer = BytesIO()
-				c.setopt(c.WRITEFUNCTION, buffer.write)
-				c.perform()
-				body = buffer.getvalue()
-				data = json.loads(body)
-				if ( len(data["action"])>0):
-					print data["action"][0]["action"]
-					identifiant = data["action"][0]["id"]
- 					
-					if(data["action"][0]["action"]=="STORE_OPEN|"):
-						storeOpen(False)
-						processAction(identifiant)
-					if(data["action"][0]["action"]=="STORE_CLOSE|"): 
-						storeClose(False)
-						processAction(identifiant)
 			time.sleep(.005)
 		message= "".join([chr(letter) for letter in radio.DATA])
 		sender = radio.SENDERID
@@ -185,7 +90,6 @@ while True:
 	except IOError, e:
 		print time.strftime("%Y-%m-%d %H:%M : ") + "Erreur : ", e
 		sys.stdout.flush()
-		reopen = True
 	except Exception, e:
 		print time.strftime("%Y-%m-%d %H:%M : ") + "Erreur : ", e
 		msg=''
