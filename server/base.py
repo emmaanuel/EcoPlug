@@ -17,7 +17,7 @@ rooms=["","","juliette","salon","jardin","","garage","grenier"]
 
 def pushOVH(metric, value):
 	global n, tmpdata
-	token_id = 'xxxxxxy'                                                                                                        
+	token_id = 'xxxxxxyy'                                                                                                        
 	token_key = 'xxxxxx'                                                                                            
 	end_point = 'https://opentsdb.iot.runabove.io/api/put'
 	tmpdata.append({'metric': metric,'timestamp': long(time.time()),'value': value,'tags': {'source': 'ecoplug'}})
