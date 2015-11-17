@@ -97,47 +97,6 @@ $(function() {
             });
         };
 
-<<<<<<< HEAD
-        getParamMotion = function() {
-            $http({method : 'GET',url : 'http://tom.emmaanuel.com/api/params/motion'})
-            .success(function(data, status) {
-                if (data.params[0].value == "enabled") {
-                    $scope.params_motion = true;
-                } else {
-                    $scope.params_motion = false;
-                }
-            })
-            .error(function(data, status) {
-                console.log("Error");
-            });
-        };
-
-        getMotion = function() {
-            $http({method : 'GET',url : 'http://tom.emmaanuel.com/api/motion/last'})
-            .success(function(data, status) {
-                $scope.motions = Array();
-                data.motion.forEach(function(element, index, array){
-                    $scope.motions.push({n:getRoomsName(element.n),d:element.d});
-                });
-            })
-            .error(function(data, status) {
-                console.log("Error");
-            });
-        };
-
-        getAction = function() {
-            $http({method : 'GET',url : 'http://tom.emmaanuel.com/api/action/last'})
-            .success(function(data, status) {
-                $scope.actions = Array();
-                data.action.forEach(function(element, index, array){
-                    $scope.actions.push({d:element.date,a:element.action,p:element.processed});
-                });
-            })
-            .error(function(data, status) {
-                console.log("Error");
-            });
-        };
-
 
         updateRoom = function(d, n, temp, rh, l){
             $scope.rooms.forEach(function(element, index, array){

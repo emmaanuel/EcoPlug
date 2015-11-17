@@ -37,15 +37,6 @@ include '../security/security.php';
                         <li>
                             <a href="index.php"><i class="fa fa-dashboard fa-fw"></i> Dashboard</a>
                         </li>
-                        <li>
-                            <a href="volet.php"><i class="fa fa-table fa-fw"></i> Volet</a>
-                        </li>
-                        <li>
-                            <a href="motion.php"><i class="glyphicon glyphicon-sunglasses"></i> Mouvement</a>
-                        </li>
-                        <li>
-                            <a href="thermo.php"><i class="glyphicon glyphicon-leaf"></i> Thermostat</a>
-                        </li>
                     </ul>
                 </div>
                 <!-- /.sidebar-collapse -->
