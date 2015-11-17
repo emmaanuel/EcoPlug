@@ -53,7 +53,7 @@
 
 
         getrooms = function() {
-            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/temp/last'})
+            $http({method : 'GET',url : 'http://tom.emmaanuel.com/api/temp/last'})
             .success(function(data, status) {
                 data.temp.forEach(function(element, index, array){
                     updateRoom(element.d, element.n, element.t, element.h, element.l)
@@ -65,7 +65,7 @@
         };
 
         getEDF = function() {
-            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/edf/last'})
+            $http({method : 'GET',url : 'http://tom.emmaanuel.com/api/edf/last'})
             .success(function(data, status) {
                 data.edf.forEach(function(element, index, array){
                     $scope.g.refresh(element.pw);
@@ -80,7 +80,7 @@
         };
 
         getParamMotion = function() {
-            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/params/motion'})
+            $http({method : 'GET',url : 'http://tom.emmaanuel.com/api/params/motion'})
             .success(function(data, status) {
                 if (data.params[0].value == "enabled") {
                     $scope.params_motion = true;
@@ -94,7 +94,7 @@
         };
 
         getMotion = function() {
-            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/motion/last'})
+            $http({method : 'GET',url : 'http://tom.emmaanuel.com/api/motion/last'})
             .success(function(data, status) {
                 $scope.motions = Array();
                 data.motion.forEach(function(element, index, array){
@@ -107,7 +107,7 @@
         };
 
         getAction = function() {
-            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/action/last'})
+            $http({method : 'GET',url : 'http://tom.emmaanuel.com/api/action/last'})
             .success(function(data, status) {
                 $scope.actions = Array();
                 data.action.forEach(function(element, index, array){
@@ -163,7 +163,7 @@
                 newStatus='disabled';
             }
             console.log('{value:"' + newStatus + '"}');
-            $http.put('http://domo.emmaanuel.com/api/params/motion', '{"value":"' + newStatus + '"}')
+            $http.put('http://tom.emmaanuel.com/api/params/motion', '{"value":"' + newStatus + '"}')
             .error(function(data, status) {
                 alert("Error");
             });
@@ -172,14 +172,14 @@
         $scope.items = ['item1', 'item2', 'item3'];
 
         $scope.voletUp = function() {
-            $http.post('http://domo.emmaanuel.com/api/action', '{"a":"STORE_OPEN|"}')
+            $http.post('http://tom.emmaanuel.com/api/action', '{"a":"STORE_OPEN|"}')
             .error(function(data, status) {
                 alert("Erreur lors de l'envoi de la commande");
             });
         }
 
         $scope.voletDown = function() {
-            $http.post('http://domo.emmaanuel.com/api/action', '{"a":"STORE_CLOSE|"}')
+            $http.post('http://tom.emmaanuel.com/api/action', '{"a":"STORE_CLOSE|"}')
             .error(function(data, status) {
                 alert("Erreur lors de l'envoi de la commande");
             });
