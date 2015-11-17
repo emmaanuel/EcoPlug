@@ -55,78 +55,61 @@ include '../security/security.php';
         <div id="page-wrapper" ng-controller="Dashboard as dash">
             <div class="row">
                 <div class="col-lg-12">
-                    <h1 class="page-header">Tableau de bord</h1>
+                    <h1 class="page-header">Thermostat</h1>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-lg-2 col-md-6" ng-repeat="room in rooms">
-                    <div class="panel panel-{{room.color}}">
-                        <div class="panel-heading">
-                            <div class="row">
-                                <div class="col-xs-3">
-                                    <i class="fa {{room.icon}} fa-4x"></i>
-                                    <div ng-cloak>{{room.name}}</div>
-                                </div>
-                                <div class="col-xs-3 text-center">
-                                    <div ng-hide="(room.light == null) || room.light >30 "><i class="fa fa-moon-o fa-3x" alt="{{room.light}}"></i><div>Nuit</div></div>
-                                    <span ng-hide="(room.light == null) || room.light <=30 "><i class="fa fa-sun-o fa-3x" alt="{{room.light}}"></i><div>Jour</div></span>
-                                </div>
-                                <div class="col-xs-6 text-right" ng-cloak>
-                                    <span class="huge"> {{room.temp}}°C</span>
-                                    <div ng-hide="(room.rh == null)">{{room.rh}}% HR</div>
-                                    
-                                </div>
-                            </div>
-                            <div class="row text-center">
-                                {{room.date}}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
             <div class="row">
                 <div class="col-lg-12 col-md-12">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            EDF
+                            Zone
                         </div>
                         <div class="panel-body">
-                            <div class="row">
-                                <div class="col-lg-6 col-md-6">
-                                    <div id="gauge"></div>
-                                </div>
-                                <div class="col-lg-6 col-md-6">
-                                 <table class="table">
-                                    <tr>
-                                        <td>Heures Pleines</td>
-                                        <td ng-cloak>{{HP}}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Heures Creuses</td>
-                                        <td ng-cloak>{{HC}}</td>
-                                    </tr>
-                                </table>
+                            <div class="row text-center">
+                               <div class="form-group">
+                                  <select id="disabledSelect" class="form-control thermostat">
+                                    <option>Salon</option>
+                                    <option>Juliette</option>
+                                    <option>Chambre RdC</option>
+                                </select>
                             </div>
+                            <h1>20.54°</h1>
                         </div>
-                        <div class="verysmall text-center" ng-cloak>{{lastEDFupdate}}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+                <div class="col-lg-12 col-md-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            Temperature Cible
+                        </div>
+                        <div class="panel-body">
+                            <div class="row text-center">
+                               <div class="thermostat">
+            <div counter="" value="quantity1" min="10" max="30" step="0.5"></div>
+          </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="text-center">
-        <a href="/pages/login.php?logout=true"><i class="fa fa-unlock-alt fa-2x"></i></a>
-    </div>
 </div>
+<div class="text-center">
+    <a href="/pages/login.php?logout=true"><i class="fa fa-unlock-alt fa-2x"></i></a>
 </div>
+
 <script src="../bower_components/jquery/jquery.min.js"></script>
 <script src="../bower_components/bootstrap/js/bootstrap.min.js"></script>
 <script src="../bower_components/raphael/raphael-min.js"></script>
 <script src="../bower_components/metisMenu/metisMenu.min.js"></script>
-<script src="../bower_components/justgage/justgage-1.1.0.min.js"></script>
+<script src="../bower_components/justgage/justgage.1.0.1.min.js"></script>
 <script src="../bower_components/bootstrap-switch/bootstrap-switch.min.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.11/angular.js"></script>
 <script src="../bower_components/angular-bootstrap-switch/angular-bootstrap-switch.min.js"></script>
-<script src="../js/sb-admin-2.js"></script>
+<script src="../js/thermo.js"></script>
 </body>
 </html>
