@@ -31,6 +31,8 @@ $app->post('/action/process','processAction');
 $app->post('/action','insertAction');
 $app->post('/action/log','logAction');
 
+$app->post('/heater','logHeater');
+
 $app->run();
 
 function getTempbyDateNode($date, $node) {
@@ -382,6 +384,23 @@ function logAction() {
 		$db = getDB();
 		$stmt = $db->prepare($sql);
 		$stmt->bindParam("action", $action->a);
+		$stmt->execute();
+		$db = null;
+	} catch(PDOException $e) {
+		//error_log($e->getMessage(), 3, '/var/tmp/php.log');
+		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
+
+	}
+}
+
+function logHeater() {
+	$request = \Slim\Slim::getInstance()->request();
+	$event = json_decode($request->getBody());
+	$sql = "INSERT INTO domo_heater_evt VALUES(null, NOW(),:event)";
+	try {
+		$db = getDB();
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam("event", $event->s);
 		$stmt->execute();
 		$db = null;
 	} catch(PDOException $e) {
