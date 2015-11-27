@@ -129,10 +129,10 @@ void updateScreen() {
     sprintf(ligne3, "     code2");
     sprintf(ligne4, "  %02d %02d %02d %02d", inputcode[1][0], inputcode[1][1], inputcode[1][2], inputcode[1][3]);
   } else if (level > 1) {
-    sprintf(ligne1, "Bravo champion");
-    sprintf(ligne2, "//GEB/public/");
-    sprintf(ligne3, "/emmanuel_cor");
-    sprintf(ligne4, "DGRD-SQE54!");
+    sprintf(ligne1, "xxx");
+    sprintf(ligne2, "xxx");
+    sprintf(ligne3, "xxx");
+    sprintf(ligne4, "xxx");
   }
   u8g.firstPage();
   do {
