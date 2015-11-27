@@ -49,7 +49,7 @@ $(function() {
         }
 
         getAction = function() {
-            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/action/last'})
+            $http({method : 'GET',url : '/api/action/last'})
             .success(function(data, status) {
                 $scope.actions = Array();
                 data.action.forEach(function(element, index, array){
@@ -71,14 +71,14 @@ $(function() {
         getAction();
 
         $scope.voletUp = function() {
-            $http.post('http://domo.emmaanuel.com/api/action', '{"a":"STORE_OPEN|"}')
+            $http.post('/api/action', '{"a":"STORE_OPEN|"}')
             .error(function(data, status) {
                 alert("Erreur lors de l'envoi de la commande");
             });
         }
 
         $scope.voletDown = function() {
-            $http.post('http://domo.emmaanuel.com/api/action', '{"a":"STORE_CLOSE|"}')
+            $http.post('/api/action', '{"a":"STORE_CLOSE|"}')
             .error(function(data, status) {
                 alert("Erreur lors de l'envoi de la commande");
             });

@@ -61,7 +61,7 @@ $(function() {
         }
 
         getParamMotion = function() {
-            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/params/motion'})
+            $http({method : 'GET',url : '/api/params/motion'})
             .success(function(data, status) {
                 if (data.params[0].value == "enabled") {
                     $scope.params_motion = true;
@@ -75,7 +75,7 @@ $(function() {
         };
 
         getMotion = function() {
-            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/motion/last'})
+            $http({method : 'GET',url : '/api/motion/last'})
             .success(function(data, status) {
                 $scope.motions = Array();
                 data.motion.forEach(function(element, index, array){
@@ -108,7 +108,7 @@ $(function() {
                 newStatus='disabled';
             }
             console.log('{value:"' + newStatus + '"}');
-            $http.put('http://domo.emmaanuel.com/api/params/motion', '{"value":"' + newStatus + '"}')
+            $http.put('/api/params/motion', '{"value":"' + newStatus + '"}')
             .error(function(data, status) {
                 alert("Error");
             });
