@@ -14,6 +14,7 @@ import requests
 n=0
 tmpdata=[]
 rooms=["","","juliette","salon","jardin","","garage","grenier"]
+api_baseurl= "http://xxxx.com"
 
 def pushOVH(metric, value):
 	global n, tmpdata
@@ -41,7 +42,7 @@ def processMsg(msg, sender, rssi):
 			rh = msg.split('|')[2]
 			l = msg.split('|')[3]
 			c = pycurl.Curl()
-			c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/temp')
+			c.setopt(pycurl.URL, api_baseurl + '/api/temp')
 			c.setopt(pycurl.POST, 1)
 			c.setopt(pycurl.POSTFIELDS, '{"n":"'+str(sender)+'","t":"'+temp+'","h":"'+rh+'","l":"'+l+'","r":"'+str(rssi)+'"}')
 			c.perform()
@@ -58,7 +59,7 @@ def processMsg(msg, sender, rssi):
 			hc = msg.split('|')[3]
 			hp = msg.split('|')[4]
 			c = pycurl.Curl()
-			c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/edf')
+			c.setopt(pycurl.URL, api_baseurl + '/api/edf')
 			c.setopt(pycurl.POST, 1)
 			c.setopt(pycurl.POSTFIELDS, '{"pw":"'+power+'","tf":"'+tf+'","hc":"'+hc+'","hp":"'+hp+'"}')
 			c.perform()
@@ -72,14 +73,14 @@ def processMsg(msg, sender, rssi):
 			if (event == "MOTION"):
 				print time.strftime("%Y-%m-%d %H:%M : ") +"MOTION Received  " 
 				c = pycurl.Curl()
-				c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/motion')
+				c.setopt(pycurl.URL, api_baseurl + '/api/motion')
 				c.setopt(pycurl.POST, 1)
 				c.setopt(pycurl.POSTFIELDS, '{"n":"'+str(sender)+'","r":"'+str(rssi)+'"}')
 				c.perform()
 				c.close()
 			if (event.startswith("HEATER")):
 				c = pycurl.Curl()
-				c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/heater')
+				c.setopt(pycurl.URL, api_baseurl + '/api/heater')
 				c.setopt(pycurl.POST, 1)
 				heaterStatus = event.startswith("ON",7)
 				c.setopt(pycurl.POSTFIELDS, '{"n":"'+str(sender)+'","r":"'+str(rssi)+'","s":"' + str(heaterStatus) + '"}')
@@ -108,7 +109,7 @@ pinDown=13
 
 def logAction(action):
 	c = pycurl.Curl()                                                                                  
-	c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/action/log')                                   
+	c.setopt(pycurl.URL, api_baseurl + '/api/action/log')                                   
 	c.setopt(pycurl.POST, 1)                                                                           
 	c.setopt(pycurl.POSTFIELDS, '{"a":"'+action+'"}')                                                  
 	c.perform()                                                                                        
@@ -116,7 +117,7 @@ def logAction(action):
 
 def processAction(actionid):
 	c = pycurl.Curl()
- 	c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/action/process')
+ 	c.setopt(pycurl.URL, api_baseurl + '/api/action/process')
  	c.setopt(pycurl.POST, 1)
  	c.setopt(pycurl.POSTFIELDS, '{"id":"' + str(actionid) + '"}')
  	c.perform()
@@ -158,7 +159,7 @@ while True:
 			if ((time.time() - referenceTime)>10):
 				referenceTime = time.time()
 				c = pycurl.Curl()
-				c.setopt(pycurl.URL, 'http://domo.emmaanuel.com/api/action/next')
+				c.setopt(pycurl.URL, api_baseurl + '/api/action/next')
 				buffer = BytesIO()
 				c.setopt(c.WRITEFUNCTION, buffer.write)
 				c.perform()
