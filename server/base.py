@@ -18,8 +18,6 @@ api_baseurl= "http://xxxx.com"
 
 def pushOVH(metric, value):
 	global n, tmpdata
-	token_id = 'xxxxxxyy'                                                                                                        
-	token_key = 'xxxxxx'                                                                                            
 	end_point = 'https://opentsdb.iot.runabove.io/api/put'
 	tmpdata.append({'metric': metric,'timestamp': long(time.time()),'value': value,'tags': {'source': 'ecoplug'}})
 	n = n + 1
@@ -87,6 +85,7 @@ def processMsg(msg, sender, rssi):
 				c.perform()
 				c.close()
 
+
 def processLight(light):
 	global lastDayStatus,currentDayStatus,newDayStatus
 	if (int(light) >30):
@@ -138,6 +137,8 @@ def storeOpen(auto=True):
 	time.sleep(0.1)                                                                                    
 	GPIO.output(pinUp, GPIO.LOW)
                                                                                                           
+
+listen()
 GPIO.setmode(GPIO.BOARD)                                                                                           
 GPIO.setup(pinDown, GPIO.OUT)                                                                                  
 GPIO.setup(pinUp, GPIO.OUT)                                                                                   
@@ -146,7 +147,6 @@ GPIO.output(pinDown, GPIO.LOW)
 
 radio = RFM69.RFM69(RF69_868MHZ, 1, 100, False)
 radio.setHighPower(False)
-radio.encrypt("xxxxxx")
 print "reading"
 lastDayStatus = ""
 currentDayStatus = ""
