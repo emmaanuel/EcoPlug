@@ -77,7 +77,7 @@
             $timeout(function() {
                 getScore();
                 secondIntervalFunction();
-            }, 500)
+            }, 800)
         };    
         secondIntervalFunction();
     }]);

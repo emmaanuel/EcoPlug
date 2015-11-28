@@ -10,14 +10,34 @@ from io import BytesIO
 import sys
 import RPi.GPIO as GPIO
 import requests
+import code, traceback, signal
 
 n=0
 tmpdata=[]
 rooms=["","","juliette","salon","jardin","","garage","grenier"]
 api_baseurl= "http://xxxx.com"
+token_id = 'xxxxx'                                                                                                        
+token_key = 'xxxxx'  
+rfm69_key = "xxxxx"
+
+
+def debug(sig, frame):
+    """Interrupt running process, and provide a python prompt for
+    interactive debugging."""
+    d={'_frame':frame}         # Allow access to frame object.
+    d.update(frame.f_globals)  # Unless shadowed by global
+    d.update(frame.f_locals)
+
+    i = code.InteractiveConsole(d)
+    message  = "Signal received : entering python shell.\nTraceback:\n"
+    message += ''.join(traceback.format_stack(frame))
+    i.interact(message)
+
+def listen():
+    signal.signal(signal.SIGUSR1, debug)  # Register handler
 
 def pushOVH(metric, value):
-	global n, tmpdata
+	global n, tmpdata, token_id, token_key                                                                               
 	end_point = 'https://opentsdb.iot.runabove.io/api/put'
 	tmpdata.append({'metric': metric,'timestamp': long(time.time()),'value': value,'tags': {'source': 'ecoplug'}})
 	n = n + 1
@@ -85,6 +105,13 @@ def processMsg(msg, sender, rssi):
 				c.perform()
 				c.close()
 
+		if (msgtype == "BAD"):
+			speed = msg.split('|')[1]
+			c = pycurl.Curl()                                                                                                 
+                        c.setopt(pycurl.URL, api_baseurl + '/api/bad/'+str(sender)+'/speed/'+str(speed))                                                         
+                        c.setopt(pycurl.POST, 1)                                                                                          
+                        c.perform()                                                                                                       
+                        c.close() 
 
 def processLight(light):
 	global lastDayStatus,currentDayStatus,newDayStatus
@@ -147,6 +174,7 @@ GPIO.output(pinDown, GPIO.LOW)
 
 radio = RFM69.RFM69(RF69_868MHZ, 1, 100, False)
 radio.setHighPower(False)
+radio.encrypt(rfm69_key)
 print "reading"
 lastDayStatus = ""
 currentDayStatus = ""
