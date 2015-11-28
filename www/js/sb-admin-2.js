@@ -71,7 +71,7 @@ $(function() {
 
 
         getrooms = function() {
-            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/temp/last'})
+            $http({method : 'GET',url : '/api/temp/last'})
             .success(function(data, status) {
                 data.temp.forEach(function(element, index, array){
                     updateRoom(element.d, element.n, element.t, element.h, element.l)
@@ -83,7 +83,7 @@ $(function() {
         };
 
         getEDF = function() {
-            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/edf/last'})
+            $http({method : 'GET',url : '/api/edf/last'})
             .success(function(data, status) {
                 data.edf.forEach(function(element, index, array){
                     $scope.g.refresh(element.pw);
