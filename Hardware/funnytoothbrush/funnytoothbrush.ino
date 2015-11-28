@@ -5,7 +5,7 @@
 #define LED 9
 #define SEUIL 400
 #define SLEEP_TIMEOUT 60000
-#define SEND_TIMEOUT 2000
+#define SEND_TIMEOUT 1000
 #define NODEID        NODE_BAD1    //unique for each node on same network
 #define NETWORKID     100  //the same on all nodes that talk to each other
 #define GATEWAYID     NODE_BASE
@@ -66,8 +66,10 @@ void sendScore(int score)
   char str_score[6];
   dtostrf(score, 0, 0, str_score);
   char buff[50];
-  sprintf(buff, "BAD|%s|", str_score);
+  sprintf(buff, "BAD|%s", str_score);
   byte sendSize = strlen(buff);
-  radio.sendWithRetry(GATEWAYID, buff, sendSize, RFM69Retry, RFM69RetryTimeout);
+  if (radio.sendWithRetry(GATEWAYID, buff, sendSize, RFM69Retry, RFM69RetryTimeout)) {
+    //Blink(LED, 30);
+  }
 }
 

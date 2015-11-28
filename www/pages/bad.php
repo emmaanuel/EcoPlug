@@ -60,7 +60,11 @@ include '../security/security.php';
             </div>
             <div class="row">
                 <div class="col-lg-12 col-md-12">
-                    <div id="gauge"></div><h1>SCORE : {{room.date}}</h1>
+                    <div id="gauge"></div><h1>SCORE : {{score}}</h1>
+                    
+                </div>
+                <div class="col-lg-12 col-md-12">
+                    <button type="button" class="btn btn-danger" ng-click="resetScore()">Reset</button>
                 </div>
             </div>
         </div>
