@@ -71,6 +71,7 @@
             $http({method : 'DELETE',url : '/api/bad'}).error(function(data, status) {
                 console.log("Error");
             });
+            $scope.score=0;
         };
 
         secondIntervalFunction = function(){
