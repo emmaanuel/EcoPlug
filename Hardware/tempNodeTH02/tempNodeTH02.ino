@@ -5,14 +5,14 @@
 #include <Wire.h>
 #include <ECOCommons.h>
 
-#define NODEID        NODE_GRENIER    //unique for each node on same network
+#define NODEID        NODE_RDC    //unique for each node on same network
 #define NETWORKID     100  //the same on all nodes that talk to each other
 #define GATEWAYID     NODE_BASE
 #define FREQUENCY   RF69_868MHZ
 //#define IS_RFM69HW    //uncomment only for RFM69HW! Leave out if you have RFM69W!
 #define LED           9 // Moteinos have LEDs on D9
 #define SERIAL_BAUD   115200
-#define TH02VCC 4
+#define TH02VCC A2
 
 //#define SERIAL_EN                //comment out if you don't want any serial output
 

@@ -427,7 +427,11 @@ function getBadInfo() {
 }
 
 function insertBadScore($id, $speed) {
-	$sql = "update domo_bad domo_bad set score=score+:speed, speed=:speed where playerid=:playerid";
+	if ($speed<125){
+		$sql = "update domo_bad domo_bad set score=score+:speed, speed=:speed where playerid=:playerid";
+	} else {
+		$sql = "update domo_bad domo_bad set speed=:speed where playerid=:playerid";
+	}
 	try {
 		$db = getDB();
 		$stmt = $db->prepare($sql);
@@ -445,6 +449,7 @@ function insertBadScore($id, $speed) {
 		//error_log($e->getMessage(), 3, '/var/tmp/php.log');
 		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
 	}
+	
 }
 
 function resetBad() {

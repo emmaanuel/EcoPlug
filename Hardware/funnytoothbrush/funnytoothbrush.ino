@@ -1,19 +1,22 @@
+#include <SPIFlash.h>
+
 #include <LowPower.h>
 #include <RFM69.h>    //get it here: https://www.github.com/lowpowerlab/rfm69
 #include <SPI.h>
 #include <ECOCommons.h>
 #define LED 9
 #define SEUIL 400
-#define SLEEP_TIMEOUT 60000
-#define SEND_TIMEOUT 1000
+#define SLEEP_TIMEOUT 50000
+#define SEND_TIMEOUT 500
 #define NODEID        NODE_BAD1    //unique for each node on same network
 #define NETWORKID     100  //the same on all nodes that talk to each other
 #define GATEWAYID     NODE_BASE
 #define FREQUENCY   RF69_868MHZ
+#define ACCVCC 4
 
-const int ap1 = A7;
-const int ap2 = A6;
-const int ap3 = A5;
+const int ap1 = A3;
+const int ap2 = A2;
+const int ap3 = A1;
 
 int sv1 = 0;
 int sv2 = 0;
@@ -22,14 +25,22 @@ unsigned long sleeptimer = millis();
 unsigned long sendtimer = 0;
 unsigned int count = 0;
 RFM69 radio;
+SPIFlash flash(5); 
 
 void setup() {
   radio.initialize(FREQUENCY, NODEID, NETWORKID);
   radio.encrypt(ENCRYPTKEY);
   radio.sleep();
   pinMode(LED, OUTPUT);
+  pinMode(ACCVCC, OUTPUT);
+  digitalWrite(ACCVCC, HIGH);
   Blink(LED, 100);
-  Serial.begin(9600);
+  //Serial.begin(9600);
+  if (flash.initialize())     
+{    
+//    DEBUGln("Flash Init OK!");    
+    flash.sleep(); 
+} 
 }
 
 void loop() {
@@ -42,7 +53,7 @@ void loop() {
   }
   if (millis() > (sleeptimer + SLEEP_TIMEOUT)) {
     Blink(LED, 1000);
-    LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
+    goDodo();
   }
 
   if (millis() > (sendtimer + SEND_TIMEOUT)) {
@@ -51,6 +62,13 @@ void loop() {
     sendtimer = millis();
   }
 
+}
+
+void goDodo(){
+    digitalWrite(ACCVCC, LOW);
+    radio.sleep();
+    flash.sleep();
+    LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
 }
 
 void Blink(byte PIN, int DELAY_MS)

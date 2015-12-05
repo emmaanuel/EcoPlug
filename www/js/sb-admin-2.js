@@ -50,7 +50,8 @@ $(function() {
         {node: "3", name:"Salon", color: "green", icon: "fa-coffee", temp:"20", rh:"46", date:"", light:null},
         {node: "4", name:"Jardin", color: "yellow", icon: "fa-tree", temp:"", rh:"", date:"", light:"0"},
         {node: "6", name:"Garage", color: "red", icon: "fa-car", temp:"22,5", rh:null, date:"", light:null},
-        {node: "7", name:"Grenier", color: "info", icon: "fa-home", temp:"22,5", rh:null, date:"", light:null}];
+        {node: "8", name:"RDC", color: "info", icon: "fa-home", temp:"22,5", rh:null, date:"", light:null}];
+
         $scope.lastEDFupdate = ".";
         $scope.HP="";
         $scope.HC="";

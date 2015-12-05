@@ -46,6 +46,9 @@ include '../security/security.php';
                         <li>
                             <a href="thermo.php"><i class="glyphicon glyphicon-leaf"></i> Thermostat</a>
                         </li>
+                        <li>
+                            <a href="bad.php"><i class="glyphicon glyphicon-flag"></i> Brosse a dents</a>
+                        </li>
                     </ul>
                 </div>
                 <!-- /.sidebar-collapse -->
@@ -59,10 +62,16 @@ include '../security/security.php';
                 </div>
             </div>
             <div class="row">
-                <div class="col-lg-12 col-md-12">
-                    <div id="gauge"></div><h1>SCORE : {{score}}</h1>
+                <div class="col-lg-6 col-md-6">
+                    <div id="gauge1"></div><h1>SCORE : {{score1<10000 ? 10000-score1 : 'WIN'}}</h1>
                     
                 </div>
+                <div class="col-lg-6 col-md-6">
+                    <div id="gauge2"></div><h1>SCORE : {{10000-score2}}</h1>
+                    
+                </div>
+            </div>
+            <div class="row">
                 <div class="col-lg-12 col-md-12">
                     <button type="button" class="btn btn-danger" ng-click="resetScore()">Reset</button>
                 </div>
@@ -80,7 +89,6 @@ include '../security/security.php';
 <script src="../bower_components/ledgauge/ledgauge.js"></script>
 <script src="../bower_components/bootstrap-switch/bootstrap-switch.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.js"></script>
-<script src="../bower_components/angular-bootstrap-switch/angular-bootstrap-switch.min.js"></script>
 <script src="../js/bad.js"></script>
 </body>
 </html>

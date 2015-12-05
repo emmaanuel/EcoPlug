@@ -14,7 +14,7 @@ import code, traceback, signal
 
 n=0
 tmpdata=[]
-rooms=["","","juliette","salon","jardin","","garage","grenier"]
+rooms=["","","juliette","salon","jardin","","garage","grenier","rdc"]
 api_baseurl= "http://xxxx.com"
 token_id = 'xxxxx'                                                                                                        
 token_key = 'xxxxx'  

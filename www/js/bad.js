@@ -32,13 +32,14 @@
     });
 
 (function() {
-    var app = angular.module('domo',['frapontillo.bootstrap-switch']);
+    var app = angular.module('domo',[]);
     app.controller('Dashboard',['$scope','$window','$timeout','$http','$log',function($scope,$window,$timeout,$http, $log){
-        $scope.score = 0;
-        $scope.led = Raphael('gauge', 100, 500).ledGauge({
-            div: document.getElementById('gauge'),
+        $scope.score1 = 0;
+        $scope.score2 = 0;
+        $scope.led1 = Raphael('gauge1', 100, 250).ledGauge({
+            div: document.getElementById('gauge1'),
             min: 0,
-            max: 500,
+            max: 250,
             title: 'Juliette',
             unit: '',
             direction: 0,
@@ -49,17 +50,35 @@
                 bottom: '40px'
             },
             thresholds: {
-                values: [20, 40, 100],
-                colors: ['#ff0000', '#f0f000', '#00ff00']
+                values: [20, 50, 100],
+                colors: ['#FE9A2E', '#00ff00', '#ff0000']
             }
         });
+        $scope.led2 = Raphael('gauge2', 100, 250).ledGauge({
+            div: document.getElementById('gauge2'),
+            min: 0,
+            max: 250,
+            title: 'Juliette',
+            unit: '',
+            direction: 0,
+            margin: {
+                left: '40px',
+                right: '30px',
+                top: '40px',
+                bottom: '40px'
+            },
+            thresholds: {
+                values: [20, 50, 100],
+                colors: ['#FE9A2E', '#00ff00', '#ff0000']
+            }
+        });        
 
         getScore = function() {
             $http({method : 'GET',url : '/api/bad'})
             .success(function(data, status) {
                 data.players.forEach(function(element, index, array){
-                    $scope.led.setTo(element.speed);
-                    $scope.score = element.score;
+                    $scope.led1.setTo(element.speed);
+                    $scope.score1 = element.score;
                 });
             })
             .error(function(data, status) {
@@ -71,14 +90,15 @@
             $http({method : 'DELETE',url : '/api/bad'}).error(function(data, status) {
                 console.log("Error");
             });
-            $scope.score=0;
+            $scope.score1=0;
+            $scope.score2=0;
         };
 
         secondIntervalFunction = function(){
             $timeout(function() {
                 getScore();
                 secondIntervalFunction();
-            }, 800)
+            }, 300)
         };    
         secondIntervalFunction();
     }]);

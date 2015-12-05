@@ -46,6 +46,9 @@ include '../security/security.php';
                         <li>
                             <a href="thermo.php"><i class="glyphicon glyphicon-leaf"></i> Thermostat</a>
                         </li>
+                        <li>
+                            <a href="bad.php"><i class="glyphicon glyphicon-flag"></i> Brosse a dents</a>
+                        </li>
                     </ul>
                 </div>
                 <!-- /.sidebar-collapse -->
