@@ -4,7 +4,6 @@ char ligne1[20] = "";
 char ligne2[20] = "";
 char ligne3[20] = "";
 char ligne4[20] = "";
-
 const int pin_A = 3;
 const int pin_B = 4;
 int n = 0;
