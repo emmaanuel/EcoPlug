@@ -1,9 +1,5 @@
 #include "U8glib.h"
-
-
 #define LED           9 // Moteinos have LEDs on D9
-
-
 char ligne1[20] = "";
 char ligne2[20] = "";
 char ligne3[20] = "";
@@ -129,10 +125,10 @@ void updateScreen() {
     sprintf(ligne3, "     code2");
     sprintf(ligne4, "  %02d %02d %02d %02d", inputcode[1][0], inputcode[1][1], inputcode[1][2], inputcode[1][3]);
   } else if (level > 1) {
-    sprintf(ligne1, "xxx");
-    sprintf(ligne2, "xxx");
-    sprintf(ligne3, "xxx");
-    sprintf(ligne4, "xxx");
+    sprintf(ligne1, "XX ");
+    sprintf(ligne2, "XX");
+    sprintf(ligne3, "XX");
+    sprintf(ligne4, "XX");
   }
   u8g.firstPage();
   do {
