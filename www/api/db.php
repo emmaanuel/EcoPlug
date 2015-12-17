@@ -1,4 +1,8 @@
 <?php
+function getDBSuffix() {
+	return "";
+}
+
 function getDB() {
 	$dbhost="";
 	$dbuser="";
