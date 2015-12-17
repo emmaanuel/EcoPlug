@@ -69,7 +69,7 @@ $scope.quantity1 = 20.5
 
 
         getrooms = function() {
-            $http({method : 'GET',url : 'http://domo.emmaanuel.com/api/temp/last'})
+            $http({method : 'GET',url : '/api/temp/last'})
             .success(function(data, status) {
                 data.temp.forEach(function(element, index, array){
                     updateRoom(element.d, element.n, element.t, element.h, element.l)

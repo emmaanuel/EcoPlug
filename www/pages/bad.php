@@ -56,40 +56,39 @@ include '../security/security.php';
             <!-- /.navbar-static-side -->
         </nav>
         <div id="page-wrapper" ng-controller="Dashboard as dash">
-            
-        <div class="row">
-            <div class="col-lg-12 col-md-12">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <i class="fa fa-bell fa-fw"></i>Détection de mouvements
-                        <span class="pull-right text-muted small"><input bs-switch type="checkbox" name="motion-checkbox" data-size="mini" ng-model="params_motion"></span>
-                    </div>
-                    <div class="panel-body">
-                        <div class="list-group">
-                            <div  class="list-group-item" ng-repeat="motion in motions">
-                                <i class="fa fa-coffee fa-fw" ng-cloak></i> {{motion.n}}
-                                <span class="pull-right text-muted small" ng-cloak><em>{{motion.d}}</em>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1 class="page-header">Challenge des brosses à dents</h1>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-6 col-md-6">
+                    <div id="gauge1"></div><h1>SCORE : {{score1<10000 ? 10000-score1 : 'WIN'}}</h1>
+                    
+                </div>
+                <div class="col-lg-6 col-md-6">
+                    <div id="gauge2"></div><h1>SCORE : {{10000-score2}}</h1>
+                    
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12 col-md-12">
+                    <button type="button" class="btn btn-danger" ng-click="resetScore()">Reset</button>
                 </div>
             </div>
         </div>
+        <div class="text-center">
+            <a href="/pages/login.php?logout=true"><i class="fa fa-unlock-alt fa-2x"></i></a>
+        </div>
     </div>
-    <div class="text-center">
-        <a href="/pages/login.php?logout=true"><i class="fa fa-unlock-alt fa-2x"></i></a>
-    </div>
-</div>
 </div>
 <script src="../bower_components/jquery/jquery.min.js"></script>
 <script src="../bower_components/bootstrap/js/bootstrap.min.js"></script>
 <script src="../bower_components/raphael/raphael-min.js"></script>
 <script src="../bower_components/metisMenu/metisMenu.min.js"></script>
-<script src="../bower_components/justgage/justgage.1.0.1.min.js"></script>
+<script src="../bower_components/ledgauge/ledgauge.js"></script>
 <script src="../bower_components/bootstrap-switch/bootstrap-switch.min.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.11/angular.js"></script>
-<script src="../bower_components/angular-bootstrap-switch/angular-bootstrap-switch.min.js"></script>
-<script src="../js/motion.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.js"></script>
+<script src="../js/bad.js"></script>
 </body>
 </html>

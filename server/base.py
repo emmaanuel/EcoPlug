@@ -10,16 +10,34 @@ from io import BytesIO
 import sys
 import RPi.GPIO as GPIO
 import requests
+import code, traceback, signal
 
 n=0
 tmpdata=[]
-rooms=["","","juliette","salon","jardin","","garage","grenier"]
-api_domain = "http://tom.emmaanuel.com"
+rooms=["","","juliette","salon","jardin","","garage","grenier","rdc"]
+api_baseurl= "http://xxxx.com"
+token_id = 'xxxxx'                                                                                                        
+token_key = 'xxxxx'  
+rfm69_key = "xxxxx"
+
+
+def debug(sig, frame):
+    """Interrupt running process, and provide a python prompt for
+    interactive debugging."""
+    d={'_frame':frame}         # Allow access to frame object.
+    d.update(frame.f_globals)  # Unless shadowed by global
+    d.update(frame.f_locals)
+
+    i = code.InteractiveConsole(d)
+    message  = "Signal received : entering python shell.\nTraceback:\n"
+    message += ''.join(traceback.format_stack(frame))
+    i.interact(message)
+
+def listen():
+    signal.signal(signal.SIGUSR1, debug)  # Register handler
 
 def pushOVH(metric, value):
-	global n, tmpdata
-	token_id = 'xxxxxx'                                                                                                        
-	token_key = 'xxxxxxx'                                                                                            
+	global n, tmpdata, token_id, token_key                                                                               
 	end_point = 'https://opentsdb.iot.runabove.io/api/put'
 	tmpdata.append({'metric': metric,'timestamp': long(time.time()),'value': value,'tags': {'source': 'ecoplug'}})
 	n = n + 1
@@ -42,7 +60,7 @@ def processMsg(msg, sender, rssi):
 			rh = msg.split('|')[2]
 			l = msg.split('|')[3]
 			c = pycurl.Curl()
-			c.setopt(pycurl.URL, api_domain + '/api/temp')
+			c.setopt(pycurl.URL, api_baseurl + '/api/temp')
 			c.setopt(pycurl.POST, 1)
 			c.setopt(pycurl.POSTFIELDS, '{"n":"'+str(sender)+'","t":"'+temp+'","h":"'+rh+'","l":"'+l+'","r":"'+str(rssi)+'"}')
 			c.perform()
@@ -56,7 +74,7 @@ def processMsg(msg, sender, rssi):
 			hc = msg.split('|')[3]
 			hp = msg.split('|')[4]
 			c = pycurl.Curl()
-			c.setopt(pycurl.URL, api_domain + '/api/edf')
+			c.setopt(pycurl.URL, api_baseurl + '/api/edf')
 			c.setopt(pycurl.POST, 1)
 			c.setopt(pycurl.POSTFIELDS, '{"pw":"'+power+'","tf":"'+tf+'","hc":"'+hc+'","hp":"'+hp+'"}')
 			c.perform()
@@ -64,12 +82,91 @@ def processMsg(msg, sender, rssi):
 			pushOVH('home.edf.power',int(power))
 			pushOVH('home.edf.hc',int(hc))
 			pushOVH('home.edf.hp',int(hp))
+		if (msgtype == "E"):
+			event = msg.split('|')[1]
+			print time.strftime("%Y-%m-%d %H:%M : ") + "EVENT: " + event
+			if (event == "MOTION"):
+				print time.strftime("%Y-%m-%d %H:%M : ") +"MOTION Received  " 
+				c = pycurl.Curl()
+				c.setopt(pycurl.URL, api_baseurl + '/api/motion')
+				c.setopt(pycurl.POST, 1)
+				c.setopt(pycurl.POSTFIELDS, '{"n":"'+str(sender)+'","r":"'+str(rssi)+'"}')
+				c.perform()
+				c.close()
+			if (event.startswith("HEATER")):
+				c = pycurl.Curl()
+				c.setopt(pycurl.URL, api_baseurl + '/api/heater')
+				c.setopt(pycurl.POST, 1)
+				heaterStatus = event.startswith("ON",7)
+				c.setopt(pycurl.POSTFIELDS, '{"n":"'+str(sender)+'","r":"'+str(rssi)+'","s":"' + str(heaterStatus) + '"}')
+				c.perform()
+				c.close()
 
+		if (msgtype == "BAD"):
+			speed = msg.split('|')[1]
+			c = pycurl.Curl()                                                                                                 
+                        c.setopt(pycurl.URL, api_baseurl + '/api/bad/'+str(sender)+'/speed/'+str(speed))                                                         
+                        c.setopt(pycurl.POST, 1)                                                                                          
+                        c.perform()                                                                                                       
+                        c.close() 
+
+def processLight(light):
+	global lastDayStatus,currentDayStatus,newDayStatus
+	if (int(light) >30):
+		if (lastDayStatus != "DAY"):
+			lastDayStatus = "DAY"
+			print time.strftime("%Y-%m-%d %H:%M : ") +"lastDayStatus change : " + lastDayStatus
+			logAction("STORE_OPEN_AUTO");
+			storeOpen() 
+			 
+	elif (int(light) <=30):
+		if (lastDayStatus != "NIGHT"):
+			lastDayStatus = "NIGHT"
+			print time.strftime("%Y-%m-%d %H:%M : ") +"lastDayStatus change : " + lastDayStatus
+			logAction("STORE_CLOSE_AUTO"); 
+			storeClose()
+
+pinUp=15
+pinDown=13
+
+
+def logAction(action):
+	c = pycurl.Curl()                                                                                  
+	c.setopt(pycurl.URL, api_baseurl + '/api/action/log')                                   
+	c.setopt(pycurl.POST, 1)                                                                           
+	c.setopt(pycurl.POSTFIELDS, '{"a":"'+action+'"}')                                                  
+	c.perform()                                                                                        
+	c.close() 	
+
+def processAction(actionid):
+	c = pycurl.Curl()
+ 	c.setopt(pycurl.URL, api_baseurl + '/api/action/process')
+ 	c.setopt(pycurl.POST, 1)
+ 	c.setopt(pycurl.POSTFIELDS, '{"id":"' + str(actionid) + '"}')
+ 	c.perform()
+ 	c.close()	
+ 	print "Action " + actionid + " processed"
+
+def storeClose(auto=True):                                                                                          
+	global pinDown
+	print time.strftime("%Y-%m-%d %H:%M : ") + "STORE CLOSE"                                           
+	GPIO.output(pinDown, GPIO.HIGH)                                                                                 
+	time.sleep(0.1)                                                                                    
+	GPIO.output(pinDown, GPIO.LOW)                                                                        
                                                                                                           
+def storeOpen(auto=True):      
+	global pinUp                                                                                             
+	print time.strftime("%Y-%m-%d %H:%M : ") + "STORE OPEN"                     
+	GPIO.output(pinUp, GPIO.HIGH)                                                                         
+	time.sleep(0.1)                                                                                    
+	GPIO.output(pinUp, GPIO.LOW)
+                                                                                                          
+
+listen()
 GPIO.setmode(GPIO.BOARD)                                                                                           
 radio = RFM69.RFM69(RF69_868MHZ, 1, 100, False)
 radio.setHighPower(False)
-radio.encrypt("xxxxxx")
+radio.encrypt(rfm69_key)
 print "reading"
 lastDayStatus = ""
 currentDayStatus = ""
@@ -79,6 +176,25 @@ while True:
 	try:
 		radio.receiveBegin()
 		while not radio.receiveDone():
+			if ((time.time() - referenceTime)>10):
+				referenceTime = time.time()
+				c = pycurl.Curl()
+				c.setopt(pycurl.URL, api_baseurl + '/api/action/next')
+				buffer = BytesIO()
+				c.setopt(c.WRITEFUNCTION, buffer.write)
+				c.perform()
+				body = buffer.getvalue()
+				data = json.loads(body)
+				if ( len(data["action"])>0):
+					print data["action"][0]["action"]
+					identifiant = data["action"][0]["id"]
+ 					
+					if(data["action"][0]["action"]=="STORE_OPEN|"):
+						storeOpen(False)
+						processAction(identifiant)
+					if(data["action"][0]["action"]=="STORE_CLOSE|"): 
+						storeClose(False)
+						processAction(identifiant)
 			time.sleep(.005)
 		message= "".join([chr(letter) for letter in radio.DATA])
 		sender = radio.SENDERID

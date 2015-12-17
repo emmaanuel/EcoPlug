@@ -33,6 +33,10 @@ $app->post('/action/log','logAction');
 
 $app->post('/heater','logHeater');
 
+$app->get('/bad','getBadInfo');
+$app->post('/bad/:id/speed/:speed','insertBadScore');
+$app->delete('/bad','resetBad');
+
 $app->run();
 
 function getTempbyDateNode($date, $node) {
@@ -372,7 +376,6 @@ function insertAction() {
 	} catch(PDOException $e) {
 		//error_log($e->getMessage(), 3, '/var/tmp/php.log');
 		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
-
 	}
 }
 
@@ -389,7 +392,6 @@ function logAction() {
 	} catch(PDOException $e) {
 		//error_log($e->getMessage(), 3, '/var/tmp/php.log');
 		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
-
 	}
 }
 
@@ -406,8 +408,62 @@ function logHeater() {
 	} catch(PDOException $e) {
 		//error_log($e->getMessage(), 3, '/var/tmp/php.log');
 		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
-
 	}
 }
+
+function getBadInfo() {
+	try {
+		$db = getDB();
+		$sql = "select * from domo_bad order by playerid";
+		$stmt = $db->prepare($sql);
+		$stmt->execute();
+		$temp = $stmt->fetchAll(PDO::FETCH_OBJ);
+		$db = null;
+		echo '{"players": ' . json_encode($temp) . '}';
+	} catch(PDOException $e) {
+	    //error_log($e->getMessage(), 3, '/var/tmp/php.log');
+		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
+	}
+}
+
+function insertBadScore($id, $speed) {
+	if ($speed<125){
+		$sql = "update domo_bad domo_bad set score=score+:speed, speed=:speed where playerid=:playerid";
+	} else {
+		$sql = "update domo_bad domo_bad set speed=:speed where playerid=:playerid";
+	}
+	try {
+		$db = getDB();
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam("speed", $speed );
+		$stmt->bindParam("playerid", $id );
+		$stmt->execute();
+		if ($stmt->affected_rows == 0){
+			$stmt = $db->prepare("insert into domo_bad values (:playerid,:speed,:speed)");
+			$stmt->bindParam("playerid", $id );
+			$stmt->bindParam("speed", $speed );
+			$stmt->execute();
+		}
+		$db = null;
+	} catch(PDOException $e) {
+		//error_log($e->getMessage(), 3, '/var/tmp/php.log');
+		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
+	}
+	
+}
+
+function resetBad() {
+	$sql = "truncate table domo_bad";
+	try {
+		$db = getDB();
+		$stmt = $db->prepare($sql);
+		$stmt->execute();
+		$db = null;
+	} catch(PDOException $e) {
+		//error_log($e->getMessage(), 3, '/var/tmp/php.log');
+		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
+	}
+}
+
 
 ?>

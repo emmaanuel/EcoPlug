@@ -1,17 +1,17 @@
 #include <RFM69.h>    //get it here: https://www.github.com/lowpowerlab/rfm69
 #include <SPI.h>
 #include <LowPower.h> //get library from: https://github.com/lowpowerlab/lowpower
-#include <TH02.h>
-#include <Wire.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 #include <ECOCommons.h>
 
-#define NODEID        NODE_RDC    //unique for each node on same network
+#define NODEID        NODE_JARDIN    //unique for each node on same network
 #define GATEWAYID     NODE_BASE
 #define FREQUENCY   RF69_868MHZ
 //#define IS_RFM69HW    //uncomment only for RFM69HW! Leave out if you have RFM69W!
 #define LED           9 // Moteinos have LEDs on D9
+#define FLASH_SS      8 // and FLASH SS on D8
 #define SERIAL_BAUD   115200
-#define TH02VCC A2
 
 //#define SERIAL_EN                //comment out if you don't want any serial output
 
@@ -22,16 +22,18 @@
 #define DEBUG(input);
 #define DEBUGln(input);
 #endif
-
-
+#define ONE_WIRE_BUS 3
 
 RFM69 radio;
-TH02 sensor(TH02_I2C_ADDR);
 char buff[50];
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+int photocellVCC = 5;
+int photocellPin = A3;     // the cell and 10K pulldown are connected to a0
+int photocellReading;
+
 
 void setup() {
-  pinMode(TH02VCC, OUTPUT);
-  digitalWrite(TH02VCC, HIGH);
 #ifdef SERIAL_EN
   Serial.begin(SERIAL_BAUD);
 #endif
@@ -43,46 +45,36 @@ void setup() {
   radio.sleep();
   sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY == RF69_433MHZ ? 433 : FREQUENCY == RF69_868MHZ ? 868 : 915);
   DEBUGln(buff);
-
-  uint8_t devID;
-  Wire.begin();
-  sensor.getId(&devID);
-  DEBUG("TH02 device ID = 0x");
-  DEBUGln(devID);
-
+  // Start up the library
+  sensors.begin();
+  pinMode(photocellVCC, OUTPUT);
+  
 }
 void loop() {
+
   float temp = 0, rh = 0;
-  DEBUG("Starting Temperature conversion.");
-  digitalWrite(TH02VCC, HIGH);
-  delay(15);
-  sensor.startTempConv();
-  sensor.waitEndConversion();
-  DEBUGln(".done!");
+  //uint8_t status;
 
-  // Get temperature calculated and rounded
-  sensor.getConversionValue();
-  temp = sensor.getLastRawTemp() / 100.0;
-  DEBUG("Temperature = ");
-  DEBUGln(sensor.getLastRawTemp() / 100.0);
+  DEBUG("Requesting temperatures...");
+  sensors.requestTemperatures(); // Send the command to get temperatures
+  DEBUGln("DONE");
 
-  DEBUG("Starting Humidity conversion.");
-  // Convert humidity
-  sensor.startRHConv();
-  sensor.waitEndConversion();
-  DEBUGln(".done!");
-  sensor.getConversionValue();
-  rh = sensor.getConpensatedRH(false) / 100.0;
-  DEBUG("Raw Humidity = ");
-  DEBUG(rh);
-  DEBUGln("%");
-  digitalWrite(TH02VCC, LOW);
+  DEBUG("Temperature for the device 1 (index 0) is: ");
+  temp = sensors.getTempCByIndex(0) / 1;
+  DEBUGln(temp);
+digitalWrite(photocellVCC, HIGH);
+  photocellReading = analogRead(photocellPin);
+digitalWrite(photocellVCC, LOW);
+  photocellReading = 1023 - photocellReading;
+  DEBUG("Analog reading = ");
+  DEBUGln(photocellReading);
+
   char str_temp[6];
-  char str_rh[6];
+  char str_light[6];
   dtostrf(temp, 0, 2, str_temp);
-  dtostrf(rh, 0, 2, str_rh);
+  dtostrf(photocellReading, 0, 0, str_light);
 
-  sprintf(buff, "T|%s|%s|", str_temp , str_rh);
+  sprintf(buff, "T|%s||%s", str_temp , str_light);
   byte sendSize = strlen(buff);
   DEBUG("Sending[");
   DEBUG(sendSize);

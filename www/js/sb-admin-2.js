@@ -50,7 +50,8 @@ $(function() {
         {node: "3", name:"Salon", color: "green", icon: "fa-coffee", temp:"20", rh:"46", date:"", light:null},
         {node: "4", name:"Jardin", color: "yellow", icon: "fa-tree", temp:"", rh:"", date:"", light:"0"},
         {node: "6", name:"Garage", color: "red", icon: "fa-car", temp:"22,5", rh:null, date:"", light:null},
-        {node: "7", name:"Grenier", color: "info", icon: "fa-home", temp:"22,5", rh:null, date:"", light:null}];
+        {node: "8", name:"RDC", color: "info", icon: "fa-home", temp:"22,5", rh:null, date:"", light:null}];
+
         $scope.lastEDFupdate = ".";
         $scope.HP="";
         $scope.HC="";
@@ -71,7 +72,8 @@ $(function() {
 
 
         getrooms = function() {
-            $http({method : 'GET',url : 'http://tom.emmaanuel.com/api/temp/last'})
+            $http({method : 'GET',url : '/api/temp/last'})
+
             .success(function(data, status) {
                 data.temp.forEach(function(element, index, array){
                     updateRoom(element.d, element.n, element.t, element.h, element.l)
@@ -83,7 +85,7 @@ $(function() {
         };
 
         getEDF = function() {
-            $http({method : 'GET',url : 'http://tom.emmaanuel.com/api/edf/last'})
+            $http({method : 'GET',url : '/api/edf/last'})
             .success(function(data, status) {
                 data.edf.forEach(function(element, index, array){
                     $scope.g.refresh(element.pw);
