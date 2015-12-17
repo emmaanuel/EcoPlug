@@ -3,7 +3,7 @@
 #include <LowPower.h> //get library from: https://github.com/lowpowerlab/lowpower
 #include <TH02.h>
 #include <Wire.h>
-#include <ECOCommons.h>
+#include <TOMCommons.h>
 
 #define NODEID        NODE_SALON
 #define GATEWAYID     NODE_BASE

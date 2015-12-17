@@ -3,7 +3,7 @@
 #include <LowPower.h> //get library from: https://github.com/lowpowerlab/lowpower
 #include <TH02.h>
 #include <Wire.h>
-#include <ECOCommons.h>
+#include <TOMCommons.h>
 
 #define NODEID        NODE_RDC    //unique for each node on same network
 #define GATEWAYID     NODE_BASE
