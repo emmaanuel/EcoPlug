@@ -6,7 +6,6 @@
 #include <ECOCommons.h>
 
 #define NODEID        NODE_RDC    //unique for each node on same network
-#define NETWORKID     100  //the same on all nodes that talk to each other
 #define GATEWAYID     NODE_BASE
 #define FREQUENCY   RF69_868MHZ
 //#define IS_RFM69HW    //uncomment only for RFM69HW! Leave out if you have RFM69W!

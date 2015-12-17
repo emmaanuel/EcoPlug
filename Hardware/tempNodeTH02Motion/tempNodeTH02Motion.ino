@@ -5,9 +5,8 @@
 #include <Wire.h>
 #include <ECOCommons.h>
 
-#define NODEID        3    //unique for each node on same network
-#define NETWORKID     100  //the same on all nodes that talk to each other
-#define GATEWAYID     1
+#define NODEID        NODE_SALON
+#define GATEWAYID     NODE_BASE
 #define FREQUENCY   RF69_868MHZ
 //#define IS_RFM69HW    //uncomment only for RFM69HW! Leave out if you have RFM69W!
 #define LED           9 // Moteinos have LEDs on D9

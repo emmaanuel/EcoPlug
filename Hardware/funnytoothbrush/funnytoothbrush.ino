@@ -9,7 +9,6 @@
 #define SLEEP_TIMEOUT 50000
 #define SEND_TIMEOUT 500
 #define NODEID        NODE_BAD1    //unique for each node on same network
-#define NETWORKID     100  //the same on all nodes that talk to each other
 #define GATEWAYID     NODE_BASE
 #define FREQUENCY   RF69_868MHZ
 #define ACCVCC 4
