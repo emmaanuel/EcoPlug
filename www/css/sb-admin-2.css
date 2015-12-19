@@ -21,7 +21,7 @@ body {
 @media(min-width:768px) {
     #page-wrapper {
         position: inherit;
-        margin: 0 10px 0 150px;
+        margin: 0 5px 0 5px;
         padding: 10px 0 0 20px;
         border-left: 1px solid #e7e7e7;
     }
