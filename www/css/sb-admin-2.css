@@ -13,7 +13,7 @@ body {
 }
 
 #page-wrapper {
-    padding: 0 15px;
+    padding: 10px 0px 0px 10px;
     min-height: 568px;
     background-color: #fff;
 }
@@ -21,8 +21,8 @@ body {
 @media(min-width:768px) {
     #page-wrapper {
         position: inherit;
-        margin: 0 0 0 250px;
-        padding: 0 30px;
+        margin: 0 10px 0 150px;
+        padding: 10px 0 0 20px;
         border-left: 1px solid #e7e7e7;
     }
 }
@@ -131,7 +131,7 @@ body {
     .sidebar {
         z-index: 1;
         position: absolute;
-        width: 250px;
+        width: 150px;
         margin-top: 51px;
     }
 
@@ -225,7 +225,7 @@ body {
 }
 
 .huge {
-    font-size: 40px;
+    font-size: 35px;
 }
 
 .panel-green {
@@ -291,4 +291,17 @@ body {
 .chart_div{
     height : 150px;
     width : 500px;
+}
+
+.vcenter {
+    display: inline-block;
+    vertical-align: middle;
+    float: none;
+}
+
+.thermostat {
+    width: 250px;
+    margin-left: auto;
+    margin-right: auto;
+    font-size:large;
 }
