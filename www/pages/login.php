@@ -17,7 +17,7 @@ if ((isset($_POST['inputPassword']) && $_POST['inputPassword'] != '')) {
 if (($login != "") && ($pass != "")){
     $h = hash("sha256",$pass);
     $db = getDB();
-    $sql = "Select user from domo_user where user=:user and hash=:hash";
+    $sql = "Select user from domo_user" . getDBSuffix() . " where user=:user and hash=:hash";
     $stmt = $db->prepare($sql);
     $stmt->bindParam("user", $login);
     $stmt->bindParam("hash", $h);
@@ -62,7 +62,7 @@ if (($login != "") && ($pass != "")){
     ?>
     <h2 class="form-signin-heading">Please sign in</h2>
     <label for="inputlogin" class="sr-only">login</label>
-    <input type="email" name="inputlogin" id="inputlogin" class="form-control" placeholder="Login" required autofocus>
+    <input type="input" name="inputlogin" id="inputlogin" class="form-control" placeholder="Login" required autofocus>
     <label for="inputPassword" class="sr-only">Password</label>
     <input type="password" name="inputPassword" id="inputPassword" class="form-control" placeholder="Password" required>
     <div class="checkbox">
