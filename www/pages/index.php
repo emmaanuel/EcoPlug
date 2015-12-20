@@ -21,12 +21,6 @@ include '../security/security.php';
         <!-- Navigation -->
         <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
             <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
                 <a class="navbar-brand" href="index.html">Domo v5.0</a>
             </div>
             <!-- /.navbar-header -->
@@ -43,14 +37,10 @@ include '../security/security.php';
                         <div class="panel-heading">
                             <div class="row">
                                 <div class="col-xs-3">
-                                    <i class="fa {{room.icon}} fa-4x"></i>
+                                    <i class="fa {{room.icon}} fa-3x"></i>
                                     <div ng-cloak>{{room.name}}</div>
                                 </div>
-                                <div class="col-xs-3 text-center">
-                                    <div ng-hide="(room.light == null) || room.light >30 "><i class="fa fa-moon-o fa-3x" alt="{{room.light}}"></i><div>Nuit</div></div>
-                                    <span ng-hide="(room.light == null) || room.light <=30 "><i class="fa fa-sun-o fa-3x" alt="{{room.light}}"></i><div>Jour</div></span>
-                                </div>
-                                <div class="col-xs-6 text-right" ng-cloak>
+                                <div class="col-xs-9 text-right" ng-cloak>
                                     <span class="huge"> {{room.temp}}°C</span>
                                     <div ng-hide="(room.rh == null)">{{room.rh}}% HR</div>
                                     
