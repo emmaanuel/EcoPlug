@@ -19,7 +19,7 @@ api_baseurl= "http://xxxx.com"
 token_id = 'xxxxx'                                                                                                        
 token_key = 'xxxxx'  
 rfm69_key = "xxxxx"
-prefix = ""
+prefix = "tom_"
 
 
 def debug(sig, frame):
