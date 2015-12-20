@@ -19,6 +19,7 @@ api_baseurl= "http://xxxx.com"
 token_id = 'xxxxx'                                                                                                        
 token_key = 'xxxxx'  
 rfm69_key = "xxxxx"
+prefix = ""
 
 
 def debug(sig, frame):
@@ -39,7 +40,7 @@ def listen():
 def pushOVH(metric, value):
 	global n, tmpdata, token_id, token_key                                                                               
 	end_point = 'https://opentsdb.iot.runabove.io/api/put'
-	tmpdata.append({'metric': metric,'timestamp': long(time.time()),'value': value,'tags': {'source': 'ecoplug'}})
+	tmpdata.append({'metric': prefix + metric,'timestamp': long(time.time()),'value': value,'tags': {'source': 'ecoplug'}})
 	n = n + 1
 	if (n>20):
 		try:                                                                                                    
