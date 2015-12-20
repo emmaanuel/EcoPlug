@@ -1,13 +1,13 @@
 #include <RFM69.h>    //get it here: https://www.github.com/lowpowerlab/rfm69
 #include <SPI.h>
-#include <ECOCommons.h>
+#include <TOMCommons.h>
 #include <TH02.h>
 #include <Wire.h>
 
 #define NODEID        6    //unique for each node on same network
 #define GATEWAYID     NODE_BASE
 #define FREQUENCY     RF69_868MHZ
-#define IS_RFM69HW    //uncomment only for RFM69HW! Leave out if you have RFM69W!
+#//define IS_RFM69HW    //uncomment only for RFM69HW! Leave out if you have RFM69W!
 #define SERIAL_BAUD   1200
 #define LED           9 // Leds PIN
 #define TH02VCC A2
@@ -41,6 +41,8 @@ char buff[50];
 
 int tour = 0;
 void setup() {
+  pinMode(TH02VCC, OUTPUT);
+  digitalWrite(TH02VCC, HIGH);
   Serial.begin(SERIAL_BAUD);
   delay(10);
   radio.initialize(FREQUENCY, NODEID, NETWORKID);
@@ -78,8 +80,6 @@ void checkLocalTemp() {  // Verifie si c'est le moment de mesurer la temperature
 
 void sendLocalTemp() {  // Mesure et envoie la temperature locale
   float temp = 0, rh = 0;
-  digitalWrite(TH02VCC, HIGH);
-  delay(15);
   sensor.startTempConv();
   sensor.waitEndConversion();
   sensor.getConversionValue();
@@ -88,7 +88,6 @@ void sendLocalTemp() {  // Mesure et envoie la temperature locale
   sensor.waitEndConversion();
   sensor.getConversionValue();
   rh = sensor.getConpensatedRH(false) / 100.0;
-  digitalWrite(TH02VCC, LOW);
   char str_temp[6];
   char str_rh[6];
   dtostrf(temp, 0, 2, str_temp);
