@@ -241,11 +241,11 @@ function insertMotion() {
 			$stmt->bindParam("node", $motion->n);
 			$stmt->bindParam("rx", $motion->r);
 			$stmt->execute();  
-			$headers ='From: ecordente@free.fr'."\n";
-			$headers .='Reply-To: ecordente@free.fr'."\n";
+			$headers ='From: votreemail@email.com'."\n";
+			$headers .='Reply-To: votreemeail@email.com'."\n";
 			$headers .='Content-Type: text/plain; charset="iso-8859-1"'."\n";
 			$headers .='Content-Transfer-Encoding: 8bit';
-			#mail('trigger@recipe.ifttt.com', 'Detection de Mouvement', 'Message contenu de l email', $headers); 
+			mail('trigger@recipe.ifttt.com', 'Detection de Mouvement', 'Message contenu de l email', $headers); 
 		}
 		
 	} catch(PDOException $e) {
