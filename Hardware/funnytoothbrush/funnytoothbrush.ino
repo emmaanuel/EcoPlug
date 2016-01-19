@@ -13,6 +13,15 @@
 #define FREQUENCY   RF69_868MHZ
 #define ACCVCC 4
 
+#define SERIAL_EN                //comment out if you don't want any serial output
+
+#ifdef SERIAL_EN
+#define DEBUG(input)   {Serial.print(input); delay(1);}
+#define DEBUGln(input) {Serial.println(input); delay(1);}
+#else
+#define DEBUG(input);
+#define DEBUGln(input);
+#endif
 const int ap1 = A3;
 const int ap2 = A2;
 const int ap3 = A1;
@@ -27,17 +36,21 @@ RFM69 radio;
 SPIFlash flash(5); 
 
 void setup() {
+  Serial.begin(9600);
+  DEBUGln("OK!"); 
   radio.initialize(FREQUENCY, NODEID, NETWORKID);
+  DEBUGln("radio init OK!");
   radio.encrypt(ENCRYPTKEY);
+  DEBUGln("radio encrypt OK!");
   radio.sleep();
+  DEBUGln("radio OK!");
   pinMode(LED, OUTPUT);
   pinMode(ACCVCC, OUTPUT);
   digitalWrite(ACCVCC, HIGH);
   Blink(LED, 100);
-  //Serial.begin(9600);
   if (flash.initialize())     
 {    
-//    DEBUGln("Flash Init OK!");    
+    DEBUGln("Flash Init OK!");    
     flash.sleep(); 
 } 
 }
@@ -46,7 +59,7 @@ void loop() {
   sv1 = analogRead(ap1);
   delay(2);
   if (sv1 < SEUIL || sv1 > (1024 - SEUIL)) {
-    //Blink(LED, 100);
+    Blink(LED, 100);
     sleeptimer = millis();
     count = count + 1;
   }
