@@ -5,7 +5,7 @@
 #include <Wire.h>
 #include <ECOCommons.h>
 
-#define NODEID        NODE_RDC    //unique for each node on same network
+#define NODEID        NODE_PARENTS    //unique for each node on same network
 #define GATEWAYID     NODE_BASE
 #define FREQUENCY   RF69_868MHZ
 //#define IS_RFM69HW    //uncomment only for RFM69HW! Leave out if you have RFM69W!
