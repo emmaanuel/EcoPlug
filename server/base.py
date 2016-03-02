@@ -182,6 +182,7 @@ lastDayStatus = ""
 currentDayStatus = ""
 newDayStatus = ""
 referenceTime = time.time()
+rebootTime = time.time()
 while True:
 	try:
 		radio.receiveBegin()
@@ -205,6 +206,9 @@ while True:
 					if(data["action"][0]["action"]=="STORE_CLOSE|"): 
 						storeClose(False)
 						processAction(identifiant)
+			if ((time.time() - rebootTime) > 3600):
+				print time.strftime("%Y-%m-%d %H:%M : ") + "No activity : Reboot"
+				call(["reboot"])
 			time.sleep(.005)
 		message= "".join([chr(letter) for letter in radio.DATA])
 		sender = radio.SENDERID
@@ -212,6 +216,7 @@ while True:
 		if radio.ACKRequested():
 			radio.sendACK()
 		print time.strftime("%Y-%m-%d %H:%M : ") + "%s from %s RSSI:%s" % (message, sender, rssi)
+		rebootTime = time.time()
 		processMsg(message, sender, rssi)
 	except IOError, e:
 		print time.strftime("%Y-%m-%d %H:%M : ") + "Erreur : ", e
