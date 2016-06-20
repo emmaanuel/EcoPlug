@@ -17,7 +17,7 @@ if ((isset($_POST['inputPassword']) && $_POST['inputPassword'] != '')) {
 if (($login != "") && ($pass != "")){
     $h = hash("sha256",$pass);
     $db = getDB();
-    $sql = "Select user from domo_user" . getDBSuffix() . " where user=:user and hash=:hash";
+    $sql = "Select user, token from domo_user" . getDBSuffix() . " where user=:user and hash=:hash";
     $stmt = $db->prepare($sql);
     $stmt->bindParam("user", $login);
     $stmt->bindParam("hash", $h);
@@ -27,6 +27,13 @@ if (($login != "") && ($pass != "")){
         session_start();
         $_SESSION['connected']="YES";
         header ("Location: /");
+        $uuid = uniqid();
+        $sql = "update domo_user" . getDBSuffix() . " set token=:uuid where user=:user";
+        $stmt = $db->prepare($sql);
+        $stmt->bindParam("user", $login);
+        $stmt->bindParam("uuid", $uuid);
+        $stmt->execute();
+        setcookie("token",$uuid,time()+60*60*24*365);
         exit();
     } else {
         $error = "Invalid credentials";
