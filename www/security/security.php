@@ -1,5 +1,5 @@
 <?php
-include '../api/db.php';
+include_once '../api/db.php';
 $connected = false;
 session_start();
 
