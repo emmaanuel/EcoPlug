@@ -18,8 +18,15 @@ $app->get('/edf/last','getLastEdf');
 $app->get('/edf/week','getEdfLastWeek');
 $app->post('/edf','insertEdf');
 
+$app->post('/gaz','insertGaz');
+
+$app->post('/metrics','insertMetrics');
+
 $app->post('/motion', 'insertMotion');
 $app->get('/motion/last', 'getLastMotion');
+
+$app->post('/log', 'insertLog');
+$app->get('/log/last', 'getLastLog');
 
 $app->get('/params/:name', 'getParams');
 $app->get('/params', 'getAllParams');
@@ -225,6 +232,48 @@ function insertEdf() {
 	}
 }
 
+function insertGaz() {
+	$request = \Slim\Slim::getInstance()->request();
+	$gaz = json_decode($request->getBody());
+	$sql = "INSERT INTO domo_gaz" . getDBSuffix() . " VALUES(NOW(),:pulse)";
+	try {
+		$db = getDB();
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam("pulse", $gaz->pulse);
+		$stmt->execute();
+		$db = null;
+	} catch(PDOException $e) {
+		//error_log($e->getMessage(), 3, '/var/tmp/php.log');
+		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
+	}
+}
+
+
+function insertMetrics() {
+	$request = \Slim\Slim::getInstance()->request();
+	$metrics = json_decode($request->getBody());
+	print("Metrics:");
+	print_r($metrics);
+	
+	foreach ($metrics as $metric){
+		try {
+			print_r($metric);
+			$sql = "INSERT INTO domo_metrics" . getDBSuffix() . " VALUES(:timestamp,:metric,:value)";
+			$db = getDB();
+			$stmt = $db->prepare($sql);
+			$stmt->bindParam("timestamp", $metric->timestamp);
+			$stmt->bindParam("metric", $metric->metric);
+			$stmt->bindParam("value", $metric->value);
+			$stmt->execute();
+			$db = null;
+		} catch(PDOException $e) {
+		//error_log($e->getMessage(), 3, '/var/tmp/php.log');
+			echo '{"error":{"text":'. $e->getMessage() .'}}'; 
+		}
+	}
+
+}
+
 function insertMotion() {
 	$request = \Slim\Slim::getInstance()->request();
 	$motion = json_decode($request->getBody());
@@ -263,6 +312,39 @@ function getLastMotion() {
 		$motion = $stmt->fetchAll(PDO::FETCH_OBJ);
 		$db = null;
 		echo '{"motion": ' . json_encode($motion) . '}';
+	} catch(PDOException $e) {
+	    //error_log($e->getMessage(), 3, '/var/tmp/php.log');
+		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
+	}
+}
+
+function insertLog() {
+	$request = \Slim\Slim::getInstance()->request();
+	echo $request->getBody();
+	$log = json_decode($request->getBody());
+	try {
+		$db = getDB();
+		$sql = "INSERT INTO domo_logs" . getDBSuffix() . " VALUES(NOW(),:node,:msg)";
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam("node", $log->n);
+		$stmt->bindParam("msg", $log->msg);
+		echo "node:" . $log->n;
+		$stmt->execute();
+	} catch(PDOException $e) {
+		//error_log($e->getMessage(), 3, '/var/tmp/php.log');
+		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
+	}
+}
+
+function getLastLog() {
+	try {
+		$db = getDB();
+		$sql = "Select node as n, date as d, message as m from domo_logs" . getDBSuffix() . " ORDER BY date DESC LIMIT 50";
+		$stmt = $db->prepare($sql);
+		$stmt->execute();
+		$logs = $stmt->fetchAll(PDO::FETCH_OBJ);
+		$db = null;
+		echo '{"logs": ' . json_encode($logs) . '}';
 	} catch(PDOException $e) {
 	    //error_log($e->getMessage(), 3, '/var/tmp/php.log');
 		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
