@@ -172,13 +172,8 @@ function getEdfbyDate($date) {
 function getLastEdf() {
 	try {
 		$db = getDB();
-		$sql = "Select truncate((max(hp)-min(hp))*0.152868/1000+(max(hc)-min(hc))*0.1105588/1000,2) as euros from domo_edf" . getDBSuffix() . " where date(date)=CURDATE()";
-		$stmt = $db->prepare($sql);
-		$stmt->execute();
-		$prix = $stmt->fetchAll(PDO::FETCH_OBJ);
-		$euros = $edf[0]->euros;
-		if ($euros == null) $euros=0;
-		$sql = "SELECT DATE_FORMAT(date, '%y-%m-%d %H:%i:%s') as d, conso as pw,truncate(hc/1000,0) as hc ,truncate(hp/1000,0) as hp, " . $euros . " as euros FROM domo_edf_live" . getDBSuffix() . " order by date desc limit 1";
+		$euros=0;
+		$sql = "SELECT DATE_FORMAT(FROM_UNIXTIME(timestamp), '%y-%m-%d %H:%i:%s') as d, value as pw,0 as hc ,0 as hp, " . $euros . " as euros FROM domo_metrics" . getDBSuffix() . " where metric='home.edf.power' order by timestamp desc limit 1";
 		$stmt = $db->prepare($sql);
 		$stmt->execute();
 		$edf = $stmt->fetchAll(PDO::FETCH_OBJ);

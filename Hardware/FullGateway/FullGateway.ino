@@ -32,11 +32,13 @@
 #define DAY 1
 #define NIGHT 2
 
-#define METRICS_QUEUE_SIZE 7
+#define METRICS_QUEUE_SIZE 9
 
-#define VERSION 18
+#define VERSION 35
 #define APP_ID "BASE"
 #define OTA_URL "/updates/autoupdate.php?version="
+
+#define VOLET_DELAY 20
 
 typedef struct Metric Metric;
 struct Metric {
@@ -52,7 +54,6 @@ NtpTime ntptime("0.fr.pool.ntp.org");
 byte RF_KEY[] = RF433KEY;
 Volet volet(D4, RF_KEY);
 SimpleTimer timer;
-RestClient ovhClient = RestClient(OVH_DOMAIN, 443, 1);
 RestClient domoClient = RestClient(DOMO_DOMAIN, 80);
 int lastDayStatus, currentDayStatus, newDayStatus;
 char buff[50];
@@ -64,7 +65,7 @@ byte nbmetrics = 0;
 Metric metricsToSend[10];
 boolean pushLock = false;
 char msg[100];
-char* rooms[15] = {"", "", "juliette", "salon", "jardin", "", "garage", "grenier", "rdc", "parents"};
+char* rooms[15] = {"", "", "juliette", "salon", "jardin", "", "garage", "grenier", "rdc", "parents", "bad", "bureau", "bac_aromate"};
 volatile bool isGazPulse = false;
 
 //Check for OTA update
@@ -98,9 +99,11 @@ void doGazPulse() {
 
 // Check light to open/close the windows
 void processLight(int light) {
-  if (light > 5) {
+  if (light > 20) {
     if (lastDayStatus != DAY) {
       lastDayStatus = DAY;
+      volet.open();
+      delay(1000 * VOLET_DELAY);
       volet.open();
       sendLog("STORE_OPEN_AUTO");
       DEBUGln("OPEN STORE");
@@ -109,16 +112,22 @@ void processLight(int light) {
     if (lastDayStatus != NIGHT) {
       lastDayStatus = NIGHT;
       volet.close();
+      delay(1000 * VOLET_DELAY);
+      volet.close();
       sendLog("STORE_CLOSE_AUTO");
       DEBUGln("CLOSE STORE");
     }
   }
 }
 
+
+
 // Send log to the domo plateform
 void sendLog(char* msg) {
   char buff[255];
-  String metrics = String("{\"n\":\"0\",\"msg\":\"") + msg + "\"}";
+  String smsg = String(msg);
+  smsg.replace("\"", "\\\"");
+  String metrics = String("{\"n\":\"0\",\"msg\":\"") + smsg + "\"}";
   metrics.toCharArray(buff, 255);
   DEBUGln(buff);
   String response;
@@ -131,13 +140,16 @@ void sendLog(char* msg) {
   }
 }
 
+void sendLog(String msg) {
+  char charmsg[100];
+  msg.toCharArray(charmsg, sizeof(charmsg));
+  sendLog(charmsg);
+}
+
 // Send metrics to the OVH and domo plateform
 void pushMetrics() {
   DEBUGln("GO PUSH METRICS");
   if (nbmetrics > 0) {
-    char header[100];
-    sprintf(header, "Authorization: Basic %s", OVHKey);
-    ovhClient.setHeader(header);
     String metrics = String("[{\"metric\":\"") + metricsToSend[0].name + "\",\"value\":" + metricsToSend[0].value + ",\"timestamp\":" + metricsToSend[0].timestamp + "}";
     for (int i = 1; i < nbmetrics; i++) {
       metrics.concat(",{\"metric\":\"" + metricsToSend[i].name + "\",\"value\":" + metricsToSend[i].value + ",\"timestamp\":" + metricsToSend[i].timestamp + "}");
@@ -152,21 +164,16 @@ void pushMetrics() {
     metrics.toCharArray(buff, 1000);
     DEBUGln(metrics);
     String response;
-    int resp = ovhClient.post("/api/put", buff, &response);
-    if (resp == 204) {
-      DEBUGln("OVH OK");
-      nbmetrics = 0;
-    } else {
-      DEBUGln("OVH KO");
-      DEBUGln(response);
-    }
-    resp = domoClient.post("/api/metrics", buff, &response);
+
+    int resp = domoClient.post("/api/metrics", buff, &response);
     if (resp == 200) {
       DEBUGln("Domo OK");
       nbmetrics = 0;
     } else {
       DEBUGln("Domo KO");
       DEBUGln(response);
+      sendLog("Domo KO");
+      sendLog(buff);
     }
   }
   DEBUGln("END PUSH METRICS");
@@ -186,18 +193,22 @@ boolean isMetricAlreadyInQueue(String name) {
 
 // Add a metric to queue
 void addMetric(String name, String value) {
-  if ((nbmetrics < METRICS_QUEUE_SIZE) && (!isMetricAlreadyInQueue(name))) {
-    DEBUG(name);
-    DEBUG(":");
-    DEBUGln(value);
-    DEBUGln(nbmetrics);
-    unsigned long t = startingTime +  (millis() / 1000);
-    Metric m;
-    m.name = String(name);
-    m.value = value.toFloat();
-    m.timestamp = t;
-    metricsToSend[nbmetrics] = m;
-    nbmetrics++;
+  if (nbmetrics < METRICS_QUEUE_SIZE){
+    if  (!isMetricAlreadyInQueue(name)) {
+      DEBUG(name);
+      DEBUG(":");
+      DEBUGln(value);
+      DEBUGln(nbmetrics);
+      unsigned long t = startingTime +  (millis() / 1000);
+      Metric m;
+      m.name = String(name);
+      m.value = value.toFloat();
+      m.timestamp = t;
+      metricsToSend[nbmetrics] = m;
+      nbmetrics++;
+    }
+  } else {
+    sendLog("Metric lost");
   }
 }
 
@@ -226,11 +237,6 @@ void processGazconsumption() {
   addMetric("home.gaz2", value);
   gazPulse = 0;
   DEBUGln("END GAZ");
-}
-
-// push Nest ambiant temp
-void processNest() {
-  
 }
 
 //process EDF consumption
@@ -319,11 +325,32 @@ void decodeRFM69(int senderid, int targetid, char *data, int len, int rssi) {
         room.concat(rooms[senderid]);
         addMetric(room, tab[4]);
       }
-      
+
     } else if (tab[0] == "E") {
       if (tab[1] == "MOTION") {
         processMotion(senderid, rssi);
+      } else {
+        sendLog(tab[1]);
       }
+    } else if (tab[0] == "A") {
+      String tag = String("home.floor.humidityThreshold.");
+      tag.concat(rooms[senderid]);
+      addMetric(tag, tab[1]);
+      tag = String("home.floor.pumpTimer.");
+      tag.concat(rooms[senderid]);
+      addMetric(tag, tab[2]);
+      tag = String("home.temp.");
+      tag.concat(rooms[senderid]);
+      addMetric(tag, tab[3]);
+      tag = String("home.light.");
+      tag.concat(rooms[senderid]);
+      addMetric(tag, tab[4]);
+      tag = String("home.floor.humidity.");
+      tag.concat(rooms[senderid]);
+      addMetric(tag, tab[5]);
+      tag = String("home.volt.");
+      tag.concat(rooms[senderid]);
+      addMetric(tag, tab[6]);
     }
   }
 }
@@ -414,7 +441,6 @@ void setup() {
   timer.setInterval(20 * 1000, pushMetrics);
   timer.setInterval(20 * 1000, printMemory);
   timer.setInterval(300 * 1000, checkUpdate); // toutes les 5min
-  timer.setInterval(120 * 1000, processNest); // toutes les 2min
 
   //Declare Gaz interrupt
   attachInterrupt(D3, doGazPulse, RISING);
@@ -423,8 +449,8 @@ void setup() {
   tinfo.init();
   tinfo.attachData(DataCallback);
   aswSerial.enableRx(false);
-
-  sendLog("Starting");
+  sprintf(buff, "Starting version %d", VERSION);
+  sendLog(buff);
 }
 
 void loop() {

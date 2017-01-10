@@ -5,10 +5,10 @@
 #include <DallasTemperature.h>
 #include <ECOCommons.h>
 
-#define NODEID        NODE_JARDIN    //unique for each node on same network
+#define NODEID        NODE_BUREAU    //unique for each node on same network
 #define GATEWAYID     NODE_BASE
 #define FREQUENCY   RF69_868MHZ
-//#define IS_RFM69HW    //uncomment only for RFM69HW! Leave out if you have RFM69W!
+#define IS_RFM69HW    //uncomment only for RFM69HW! Leave out if you have RFM69W!
 #define LED           9 // Moteinos have LEDs on D9
 #define FLASH_SS      8 // and FLASH SS on D8
 #define SERIAL_BAUD   115200
@@ -23,6 +23,10 @@
 #define DEBUGln(input);
 #endif
 #define ONE_WIRE_BUS 3
+#define DS_POWER_PIN 4
+
+//#define PHOTOCELL
+
 
 RFM69 radio;
 char buff[50];
@@ -48,38 +52,46 @@ void setup() {
   DEBUGln(buff);
   // Start up the library
   sensors.begin();
+#ifdef PHOTOCELL
   pinMode(photocellVCC, OUTPUT);
+#endif
+  pinMode(DS_POWER_PIN, OUTPUT);
+  
   delay(1000);
 }
 void loop() {
 
   float temp = 0, rh = 0;
   //uint8_t status;
-
+  digitalWrite(DS_POWER_PIN, HIGH);
+  //delay(100);
   DEBUG("Requesting temperatures...");
   sensors.requestTemperatures(); // Send the command to get temperatures
   DEBUGln("DONE");
-
   DEBUG("Temperature for the device 1 (index 0) is: ");
   temp = sensors.getTempCByIndex(0) / 1;
+  digitalWrite(DS_POWER_PIN, LOW);
   DEBUGln(temp);
+#ifdef PHOTOCELL
 digitalWrite(photocellVCC, HIGH);
   photocellReading = analogRead(photocellPin);
 digitalWrite(photocellVCC, LOW);
   photocellReading = 1023 - photocellReading;
   DEBUG("Analog reading = ");
   DEBUGln(photocellReading);
-  
+#endif
   int sensorValue = analogRead(inVoltPin);
-  float volt = (float) sensorValue / 1024 * readVcc() * 2.424242 /1000;
+  float volt = (float) sensorValue / 1024 * readVcc() * 2 /1000;
   
-  char str_volt[6];
+  char str_volt[6]="";
   char str_temp[6];
-  char str_light[6];
+  char str_light[6]="";
   dtostrf(temp, 0, 2, str_temp);
-  dtostrf(photocellReading, 0, 0, str_light);
+  
   dtostrf(volt, 0, 2, str_volt);
-
+#ifdef PHOTOCELL
+  dtostrf(photocellReading, 0, 0, str_light);
+#endif
   sprintf(buff, "T|%s||%s|%s", str_temp , str_light, str_volt);
   byte sendSize = strlen(buff);
   DEBUG("Sending[");
@@ -95,7 +107,7 @@ digitalWrite(photocellVCC, LOW);
   Blink(LED, 3);
 
   // On attend 10 min
-  for (byte i = 0; i < 60; i++)
+  for (byte i = 0; i < 70; i++)
     LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
 }
 
