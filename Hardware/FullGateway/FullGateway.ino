@@ -32,9 +32,9 @@
 #define DAY 1
 #define NIGHT 2
 
-#define METRICS_QUEUE_SIZE 9
+#define METRICS_QUEUE_SIZE 11
 
-#define VERSION 35
+#define VERSION 42
 #define APP_ID "BASE"
 #define OTA_URL "/updates/autoupdate.php?version="
 
@@ -62,7 +62,7 @@ const long noisefilter = 500;
 unsigned long currentMillis, previousGazPulseMillis = 0;
 int gazPulse = 0;
 byte nbmetrics = 0;
-Metric metricsToSend[10];
+Metric metricsToSend[METRICS_QUEUE_SIZE];
 boolean pushLock = false;
 char msg[100];
 char* rooms[15] = {"", "", "juliette", "salon", "jardin", "", "garage", "grenier", "rdc", "parents", "bad", "bureau", "bac_aromate"};
@@ -333,24 +333,22 @@ void decodeRFM69(int senderid, int targetid, char *data, int len, int rssi) {
         sendLog(tab[1]);
       }
     } else if (tab[0] == "A") {
+      //sendLog(data);
       String tag = String("home.floor.humidityThreshold.");
       tag.concat(rooms[senderid]);
       addMetric(tag, tab[1]);
       tag = String("home.floor.pumpTimer.");
       tag.concat(rooms[senderid]);
       addMetric(tag, tab[2]);
-      tag = String("home.temp.");
-      tag.concat(rooms[senderid]);
-      addMetric(tag, tab[3]);
-      tag = String("home.light.");
-      tag.concat(rooms[senderid]);
-      addMetric(tag, tab[4]);
       tag = String("home.floor.humidity.");
       tag.concat(rooms[senderid]);
-      addMetric(tag, tab[5]);
+      addMetric(tag, tab[3]);
       tag = String("home.volt.");
       tag.concat(rooms[senderid]);
-      addMetric(tag, tab[6]);
+      addMetric(tag, tab[4]);
+      tag = String("home.freememory.");
+      tag.concat(rooms[senderid]);
+      addMetric(tag, tab[5]);
     }
   }
 }
@@ -415,7 +413,10 @@ void setup() {
 
   // Connect the wifi Network
   WiFiManager wifiManager;
-  wifiManager.autoConnect("AutoConnectAP");
+  wifiManager.setConfigPortalTimeout(180);
+  if (!wifiManager.autoConnect("AutoConnectAP"))
+    ESP.reset();
+  
   DEBUGln("connected...yeey :)");
 
   // Check if the is an update to do
@@ -457,4 +458,6 @@ void loop() {
   timer.run();
   checkRadio();
   checkGaz();
+  if (WiFi.status() != WL_CONNECTED)
+    ESP.reset();
 }
